@@ -1,0 +1,6 @@
+{
+  "name": "MediKiosk - Clinical Pre-Consultation & E-Prescription System",
+  "description": "AI-powered pre-consultation, clinical information extraction, red-flag detection, 60-second doctor brief, and doctor-authorized electronic prescriptions with QR verification.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
