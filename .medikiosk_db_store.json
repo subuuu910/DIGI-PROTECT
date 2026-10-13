@@ -1,0 +1,918 @@
+{
+  "users": [
+    {
+      "id": "doc-01",
+      "name": "Dr. Eleanor Vance, MD",
+      "email": "doctor@medikiosk.health",
+      "role": "DOCTOR",
+      "avatarUrl": "/src/assets/images/avatar_doctor_verma_1791477926306.jpg",
+      "doctorLicense": "GMC-734567",
+      "doctorSpecialty": "Internal Medicine & Clinical Informatics",
+      "hospitalAffiliation": "St. Marks Medical Clinic & Metro Health Network",
+      "passwordHash": "0b87716b26672c6009327cba15597107369d094fb8db7443298375ecc05f40d8f008e3c1a223f5c52856849e19dd20d9d11aaed0c02060cfafcfff6a1759559a",
+      "passwordSalt": "salt_medikiosk_doc1",
+      "isVerified": true,
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "doc-02",
+      "name": "Dr. Arvind Verma, MD",
+      "email": "a.verma@medikiosk.health",
+      "role": "DOCTOR",
+      "doctorLicense": "GMC-892144",
+      "doctorSpecialty": "Pulmonology & Respiratory Care",
+      "hospitalAffiliation": "Central Medical Group",
+      "passwordHash": "164c39ae88c1648444cc33784f6c8832ec6d508f7ba5d8ee4526a3baab7e2d67286af1516dcbedb7f3e8e4f32f525c865f65c03207aae2d03d4dd8624602cf12",
+      "passwordSalt": "salt_medikiosk_doc2",
+      "isVerified": true,
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "usr-pat-1024",
+      "name": "Rahul Verma",
+      "email": "patient@medikiosk.health",
+      "role": "PATIENT",
+      "linkedPatientId": "pat-1024",
+      "patientId": "MK1024",
+      "passwordHash": "531a2b6ff161a956f9975a5da3180972c333f0f6729db9e53b41f7d6e68407165bd58a9c5eff2a8d94ef42e5d303d725bbf5123677675fbcd42cedf44f49c374",
+      "passwordSalt": "salt_medikiosk_pat1",
+      "isVerified": true,
+      "phone": "+1 (555) 234-8901",
+      "age": 42,
+      "gender": "Male",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "usr-pat-1025",
+      "name": "Anita Sharma",
+      "email": "anita.sharma@example.com",
+      "role": "PATIENT",
+      "linkedPatientId": "pat-1025",
+      "patientId": "MK1025",
+      "passwordHash": "83be1e4e4cba9cb9486493d9167cda603e8223b5a5ccc98ee2a0c11713d2dc9cd60d4f4d8e4a2016470f1d5a901c2cadf9edbc5e92dfb7f4e9cb63ba3707a1e9",
+      "passwordSalt": "salt_medikiosk_pat2",
+      "isVerified": true,
+      "phone": "+1 (555) 456-7890",
+      "age": 38,
+      "gender": "Female",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "usr-pat-1026",
+      "name": "David Miller",
+      "email": "david.miller@example.com",
+      "role": "PATIENT",
+      "linkedPatientId": "pat-1026",
+      "patientId": "MK1026",
+      "passwordHash": "70d8c3d2c3974023987fe6588e912911d77b78642d2c48e95ffc0673b3673d0f0e7f04d12993c8ed8c5f7c2490d542a81c998234e7534a28e8974062100f4eec",
+      "passwordSalt": "salt_medikiosk_pat3",
+      "isVerified": true,
+      "phone": "+1 (555) 789-0123",
+      "age": 51,
+      "gender": "Male",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "usr-1791706136688_x5py",
+      "name": "Marcus Brody",
+      "email": "patient.marcus.1791706136539@testclinic.com",
+      "role": "PATIENT",
+      "passwordHash": "c9c9bed8fa7b3ddb378acd8946d35f961c460312318178b9247f1430ee99b54a46ed6404c32f5a28fb1c405da7f2ce653b55b024eccc7b049800e65eaed9f9b5",
+      "passwordSalt": "2c225486017d88c9e70e3eb81fe04b81",
+      "isVerified": true,
+      "phone": "+1 555-019-2831",
+      "age": 45,
+      "gender": "Male",
+      "linkedPatientId": "pat-1791706136688_x5py",
+      "patientId": "MK6805",
+      "createdAt": "2026-10-11T08:08:56.693Z"
+    },
+    {
+      "id": "doc-103",
+      "name": "Dr. John Watson, MD",
+      "email": "dr.john.watson.1791706136705@hospital.org",
+      "role": "DOCTOR",
+      "passwordHash": "863a322f0ee14e050df152bc1fff5d7f2a9c71102f015de0c2382cf63d468d5a5296b506ca1e29670915987e1ca8ea6fcc946cbae7c033c108c51fe040e22c9e",
+      "passwordSalt": "f53dabcf9b0be2f512b51e9bcd00589c",
+      "isVerified": true,
+      "doctorLicense": "GMC-883912",
+      "doctorSpecialty": "General Practice",
+      "phone": "+1 555-019-9944",
+      "hospitalAffiliation": "MediKiosk Healthcare Network (Pending Verification)",
+      "createdAt": "2026-10-11T08:08:56.750Z"
+    }
+  ],
+  "sessions": {
+    "tok_22d2add53ecace3169b3398e15dcee0c762cb14d8e896179": {
+      "token": "tok_22d2add53ecace3169b3398e15dcee0c762cb14d8e896179",
+      "userId": "doc-103",
+      "role": "DOCTOR",
+      "isVerified": true,
+      "createdAt": "2026-10-11T08:08:56.863Z",
+      "expiresAt": 1792310936863
+    },
+    "tok_9d23abece5640131c4e194546c041aefe644b91b37683674": {
+      "token": "tok_9d23abece5640131c4e194546c041aefe644b91b37683674",
+      "userId": "usr-1791706136688_x5py",
+      "role": "PATIENT",
+      "isVerified": true,
+      "createdAt": "2026-10-11T08:08:56.928Z",
+      "expiresAt": 1792310936928
+    }
+  },
+  "currentUser": {
+    "id": "guest",
+    "name": "Guest Patient",
+    "email": "guest@medikiosk.health",
+    "role": "PATIENT",
+    "linkedPatientId": "pat-1024",
+    "patientId": "MK1024"
+  },
+  "patients": [
+    {
+      "id": "pat-1024",
+      "patientId": "MK1024",
+      "fullName": "Rahul Verma",
+      "age": 42,
+      "gender": "Male",
+      "dob": "1984-05-14",
+      "phone": "+91 98765 43210",
+      "email": "rahul.verma@example.com",
+      "emergencyContact": {
+        "name": "Pooja Verma",
+        "relationship": "Spouse",
+        "phone": "+91 98765 43211"
+      },
+      "existingConditions": [
+        "Mild Asthma",
+        "Allergic Rhinitis"
+      ],
+      "knownAllergies": [
+        "None declared in interview"
+      ],
+      "currentMedicines": [
+        "Salbutamol 100mcg Inhaler (PRN)"
+      ],
+      "consentGiven": true,
+      "consentTimestamp": "2026-10-08T08:30:00Z",
+      "priority": "AMBER",
+      "status": "In Consultation",
+      "registeredAt": "2026-10-08T08:25:00Z",
+      "waitingTimeMinutes": 18
+    },
+    {
+      "id": "pat-1025",
+      "patientId": "MK1025",
+      "fullName": "Anita Sharma",
+      "age": 58,
+      "gender": "Female",
+      "dob": "1968-11-22",
+      "phone": "+91 98220 11223",
+      "email": "anita.sharma@example.com",
+      "emergencyContact": {
+        "name": "Rohan Sharma",
+        "relationship": "Son",
+        "phone": "+91 98220 11224"
+      },
+      "existingConditions": [
+        "Type 2 Diabetes",
+        "Hypertension"
+      ],
+      "knownAllergies": [
+        "Sulfa drugs"
+      ],
+      "currentMedicines": [
+        "Metformin 500mg",
+        "Amlodipine 5mg"
+      ],
+      "consentGiven": true,
+      "consentTimestamp": "2026-10-08T08:45:00Z",
+      "priority": "RED",
+      "status": "Waiting",
+      "registeredAt": "2026-10-08T08:42:00Z",
+      "waitingTimeMinutes": 6
+    },
+    {
+      "id": "pat-1026",
+      "patientId": "MK1026",
+      "fullName": "David Miller",
+      "age": 29,
+      "gender": "Male",
+      "dob": "1997-03-09",
+      "phone": "+91 99112 33445",
+      "email": "david.miller@example.com",
+      "emergencyContact": {
+        "name": "Sarah Miller",
+        "relationship": "Sister",
+        "phone": "+91 99112 33446"
+      },
+      "existingConditions": [
+        "None"
+      ],
+      "knownAllergies": [
+        "No known allergies"
+      ],
+      "currentMedicines": [
+        "None"
+      ],
+      "consentGiven": true,
+      "consentTimestamp": "2026-10-08T08:10:00Z",
+      "priority": "GREEN",
+      "status": "Waiting",
+      "registeredAt": "2026-10-08T08:05:00Z",
+      "waitingTimeMinutes": 38
+    },
+    {
+      "id": "pat-1791706136688_x5py",
+      "patientId": "MK6805",
+      "fullName": "Marcus Brody",
+      "age": 45,
+      "gender": "Male",
+      "dob": "1994-01-01",
+      "phone": "+1 555-019-2831",
+      "email": "patient.marcus.1791706136539@testclinic.com",
+      "emergencyContact": {
+        "name": "Primary Contact",
+        "relationship": "Family",
+        "phone": "+1 555-019-2831"
+      },
+      "existingConditions": [],
+      "knownAllergies": [
+        "None declared"
+      ],
+      "currentMedicines": [],
+      "consentGiven": true,
+      "consentTimestamp": "2026-10-11T08:08:56.688Z",
+      "priority": "GREEN",
+      "status": "Waiting",
+      "registeredAt": "2026-10-11T08:08:56.688Z",
+      "waitingTimeMinutes": 0
+    }
+  ],
+  "interviews": {
+    "pat-1024": {
+      "id": "int-1024",
+      "patientId": "pat-1024",
+      "startedAt": "2026-10-08T08:26:00Z",
+      "completedAt": "2026-10-08T08:34:00Z",
+      "status": "completed",
+      "chiefComplaint": "Fever and cough for three days",
+      "duration": "3 days",
+      "severity": "Moderate",
+      "symptoms": [
+        "High fever (recorded 102.2°F / 39°C)",
+        "Persistent productive cough with yellowish phlegm",
+        "Mild breathlessness on walking up stairs",
+        "Generalized fatigue and body aches"
+      ],
+      "associatedSymptoms": [
+        "Mild headache",
+        "Throat irritation"
+      ],
+      "progressPercent": 100,
+      "messages": [
+        {
+          "id": "m-1",
+          "sender": "ai",
+          "text": "Hello Rahul. I am the MediKiosk Clinical Assistant. I am here to help organize your symptoms and medical records before your consultation with the physician. Please tell me what primary symptoms you are experiencing today.",
+          "timestamp": "08:26 AM",
+          "suggestedReplies": [
+            "Fever and cough for 3 days",
+            "Severe headache",
+            "Abdominal pain"
+          ]
+        },
+        {
+          "id": "m-2",
+          "sender": "patient",
+          "text": "I have fever and cough for three days.",
+          "timestamp": "08:27 AM",
+          "isVoice": false
+        },
+        {
+          "id": "m-3",
+          "sender": "ai",
+          "text": "Thank you for noting that. How high has your fever been, and is it accompanied by chills or body aches?",
+          "timestamp": "08:27 AM",
+          "suggestedReplies": [
+            "Around 102°F with chills",
+            "Mild low-grade fever",
+            "Fever only at night"
+          ]
+        },
+        {
+          "id": "m-4",
+          "sender": "patient",
+          "text": "It reached about 102.2°F yesterday night with chills. Body aches are quite bad.",
+          "timestamp": "08:28 AM",
+          "isVoice": true
+        },
+        {
+          "id": "m-5",
+          "sender": "ai",
+          "text": "Understood. Is your cough dry or producing sputum/phlegm? And are you experiencing any chest discomfort or breathing difficulty?",
+          "timestamp": "08:29 AM",
+          "suggestedReplies": [
+            "Yellowish phlegm, slight breathlessness on stairs",
+            "Completely dry cough",
+            "Severe wheezing"
+          ]
+        },
+        {
+          "id": "m-6",
+          "sender": "patient",
+          "text": "Yellowish phlegm, and slight breathlessness when I climb the stairs. I use an asthma inhaler occasionally.",
+          "timestamp": "08:30 AM"
+        },
+        {
+          "id": "m-7",
+          "sender": "ai",
+          "text": "Important clinical detail recorded. Are you currently taking any medicines or over-the-counter tablets for this episode?",
+          "timestamp": "08:31 AM",
+          "suggestedReplies": [
+            "Took Paracetamol 650mg once",
+            "No medicines yet",
+            "Using Salbutamol inhaler"
+          ]
+        },
+        {
+          "id": "m-8",
+          "sender": "patient",
+          "text": "I took one Paracetamol 650mg morning, and two puffs of Salbutamol inhaler.",
+          "timestamp": "08:32 AM"
+        },
+        {
+          "id": "m-9",
+          "sender": "ai",
+          "text": "Noted. Do you have any known drug allergies that the doctor should be aware of before prescribing?",
+          "timestamp": "08:32 AM",
+          "suggestedReplies": [
+            "No known allergies",
+            "Allergic to Penicillin",
+            "Allergic to Sulfa"
+          ]
+        },
+        {
+          "id": "m-10",
+          "sender": "patient",
+          "text": "No known allergies as far as I remember.",
+          "timestamp": "08:33 AM",
+          "evidenceTag": "ALLERGY_CONTRADICTION_POINT"
+        },
+        {
+          "id": "m-11",
+          "sender": "ai",
+          "text": "Thank you, Rahul. I have synthesized your answers. Next, please upload your previous prescriptions or lab reports so our OCR can correlate your records for the doctor.",
+          "timestamp": "08:34 AM"
+        }
+      ]
+    },
+    "pat-1791706136688_x5py": {
+      "id": "int-MK6805",
+      "patientId": "pat-1791706136688_x5py",
+      "startedAt": "2026-10-11T08:08:56.688Z",
+      "status": "in_progress",
+      "chiefComplaint": "",
+      "duration": "",
+      "severity": "Mild",
+      "symptoms": [],
+      "associatedSymptoms": [],
+      "progressPercent": 10,
+      "messages": [
+        {
+          "id": "m-init-1791706136688",
+          "sender": "ai",
+          "text": "Welcome Marcus Brody. I am your MediKiosk AI Clinical Triage Assistant. Please describe what chief symptoms or discomfort you are experiencing today.",
+          "timestamp": "08:08 AM",
+          "suggestedReplies": [
+            "Fever and headache",
+            "Persistent cough",
+            "Stomach ache",
+            "Routine check-up"
+          ]
+        }
+      ]
+    }
+  },
+  "documents": {
+    "pat-1024": [
+      {
+        "id": "doc-rx-01",
+        "patientId": "pat-1024",
+        "fileName": "Previous_Prescription_StMarks.jpg",
+        "fileType": "prescription",
+        "mimeType": "image/jpeg",
+        "fileSize": "1.8 MB",
+        "uploadedAt": "2026-10-08T08:35:00Z",
+        "thumbnailUrl": "/src/assets/images/sample_prescription_doc_1791477939237.jpg",
+        "ocrStatus": "completed",
+        "rawOcrText": "ST. MARK'S MEDICAL CLINIC\nDr. Eleanor Vance, MD (GMC: 734567)\nDate: 18/10/2023 | Patient: Rahul Verma | Age: 39 | Sex: M\nDx: Acute Sinusitis / Mild Asthma Exacerbation\nALLERGIES: PENICILLIN (Causes urticarial hives & facial rash)\nRx:\n1. Amoxicillin 500mg, Tabs - [DISCONTINUED DUE TO ALLERGIC RASH REACTION]\n   Replaced with: Azithromycin 500mg OD x 3 days\n2. Salbutamol 100mcg Inhaler: 2 puffs QID prn SOB\n3. Paracetamol 500mg Tabs: 1 tab PO QID prn pain/fever",
+        "extractedEntities": {
+          "medicines": [
+            "Amoxicillin 500mg (Adverse Reaction)",
+            "Azithromycin 500mg",
+            "Salbutamol 100mcg",
+            "Paracetamol 500mg"
+          ],
+          "dosages": [
+            "500mg",
+            "100mcg"
+          ],
+          "dates": [
+            "18/10/2023"
+          ],
+          "conditions": [
+            "Acute Sinusitis",
+            "Mild Asthma Exacerbation"
+          ],
+          "allergies": [
+            "Penicillin / Beta-lactams (Hives & Facial Rash documented)"
+          ],
+          "doctorNotes": "Patient experienced severe cutaneous reaction to Amoxicillin in Oct 2023. Flagged on medical card."
+        }
+      },
+      {
+        "id": "doc-lab-02",
+        "patientId": "pat-1024",
+        "fileName": "Recent_CBC_Metabolic_Panel.jpg",
+        "fileType": "lab_report",
+        "mimeType": "image/jpeg",
+        "fileSize": "2.4 MB",
+        "uploadedAt": "2026-10-08T08:36:00Z",
+        "thumbnailUrl": "/src/assets/images/sample_lab_report_1791477951351.jpg",
+        "ocrStatus": "completed",
+        "rawOcrText": "LABORATORY BLOOD TEST REPORT\nPatient: Rahul Verma | Ref: Dr. Vance | Date: 07/10/2026\nCOMPLETE BLOOD COUNT (CBC):\nWBC: 12.8 x10^3/uL [HIGH, Ref: 4.0 - 10.0] -> Leukocytosis\nNeutrophils: 82% [HIGH, Ref: 40 - 70%]\nHemoglobin: 14.8 g/dL [Normal, Ref: 13.5 - 17.5]\nPlatelets: 245 x10^3/uL [Normal, Ref: 150 - 400]\nMETABOLIC PANEL:\nFasting Glucose: 104 mg/dL [Mild Borderline, Ref: 70 - 99]\nCreatinine: 0.95 mg/dL [Normal, Ref: 0.7 - 1.3]\nCRP (C-Reactive Protein): 34 mg/L [ELEVATED, Ref: < 5 mg/L]",
+        "extractedEntities": {
+          "conditions": [
+            "Leukocytosis (Infection Indicator)",
+            "Elevated Inflammatory Markers (CRP 34)"
+          ],
+          "dates": [
+            "07/10/2026"
+          ],
+          "labValues": [
+            {
+              "parameter": "WBC (White Blood Count)",
+              "value": "12.8",
+              "unit": "x10³/µL",
+              "referenceRange": "4.0 - 10.0",
+              "isAbnormal": true
+            },
+            {
+              "parameter": "Neutrophils",
+              "value": "82",
+              "unit": "%",
+              "referenceRange": "40 - 70",
+              "isAbnormal": true
+            },
+            {
+              "parameter": "C-Reactive Protein (CRP)",
+              "value": "34.0",
+              "unit": "mg/L",
+              "referenceRange": "< 5.0",
+              "isAbnormal": true
+            },
+            {
+              "parameter": "Hemoglobin",
+              "value": "14.8",
+              "unit": "g/dL",
+              "referenceRange": "13.5 - 17.5",
+              "isAbnormal": false
+            },
+            {
+              "parameter": "Serum Creatinine",
+              "value": "0.95",
+              "unit": "mg/dL",
+              "referenceRange": "0.7 - 1.3",
+              "isAbnormal": false
+            }
+          ]
+        }
+      }
+    ],
+    "pat-1791706136688_x5py": []
+  },
+  "facts": {
+    "pat-1024": [
+      {
+        "id": "f-1",
+        "patientId": "pat-1024",
+        "category": "symptom",
+        "fact": "Fever (102.2°F) with rigors and productive cough for 3 days",
+        "sourceType": "interview",
+        "sourceName": "AI Adaptive Interview",
+        "sourceReference": "Message #4 & #6",
+        "verifiedByDoctor": true,
+        "doctorNotes": "Verified by Dr. Watson"
+      },
+      {
+        "id": "f-2",
+        "patientId": "pat-1024",
+        "category": "symptom",
+        "fact": "Yellowish purulent phlegm with mild exertional dyspnea on stair climbing",
+        "sourceType": "interview",
+        "sourceName": "AI Adaptive Interview",
+        "sourceReference": "Message #6",
+        "verifiedByDoctor": true
+      },
+      {
+        "id": "f-3",
+        "patientId": "pat-1024",
+        "category": "history",
+        "fact": "History of Mild Asthma with periodic bronchodilator use",
+        "sourceType": "document",
+        "sourceName": "Previous_Prescription_StMarks.jpg",
+        "sourceReference": "St. Marks Clinic Rx (18/10/2023)",
+        "verifiedByDoctor": true
+      },
+      {
+        "id": "f-4",
+        "patientId": "pat-1024",
+        "category": "allergy",
+        "fact": "Documented Penicillin / Amoxicillin allergy (urticaria & facial erythema)",
+        "sourceType": "document",
+        "sourceName": "Previous_Prescription_StMarks.jpg",
+        "sourceReference": "Page 1, Dx header",
+        "verifiedByDoctor": true,
+        "isContradicted": true,
+        "doctorNotes": "Verified with patient: Rahul forgot the amoxicillin reaction had been cataloged as a penicillin allergy."
+      },
+      {
+        "id": "f-5",
+        "patientId": "pat-1024",
+        "category": "allergy",
+        "fact": "Patient stated \"No known allergies as far as I remember\" during intake",
+        "sourceType": "interview",
+        "sourceName": "AI Adaptive Interview",
+        "sourceReference": "Message #10",
+        "verifiedByDoctor": false,
+        "isContradicted": true,
+        "doctorNotes": "Overridden by clinical record: Patient has confirmed penicillin allergy."
+      },
+      {
+        "id": "f-6",
+        "patientId": "pat-1024",
+        "category": "medicine",
+        "fact": "Salbutamol 100mcg Inhaler 2 puffs PRN taken during acute cough spells",
+        "sourceType": "interview",
+        "sourceName": "AI Adaptive Interview",
+        "sourceReference": "Message #8",
+        "verifiedByDoctor": true
+      },
+      {
+        "id": "f-7",
+        "patientId": "pat-1024",
+        "category": "lab_result",
+        "fact": "Elevated WBC (12.8 x10³/µL) and CRP (34 mg/L) indicating bacterial lower respiratory inflammation",
+        "sourceType": "document",
+        "sourceName": "Recent_CBC_Metabolic_Panel.jpg",
+        "sourceReference": "CBC Pathology Panel (07/10/2026)",
+        "verifiedByDoctor": true
+      }
+    ],
+    "pat-1791706136688_x5py": []
+  },
+  "redFlags": {
+    "pat-1024": [
+      {
+        "id": "rf-1",
+        "level": "AMBER",
+        "title": "Exertional Breathlessness in Asthmatic Patient with Productive Cough",
+        "description": "Patient reports mild dyspnea when climbing stairs alongside yellowish sputum. Underlying asthma increases risk of secondary bacterial bronchospasm or lower respiratory tract infection (LRTI).",
+        "recommendation": "Priority physician auscultation, pulse oximetry (SpO2 check), and consideration of non-beta-lactam targeted antimicrobial coverage.",
+        "sourceFactIds": [
+          "f-2",
+          "f-3",
+          "f-7"
+        ],
+        "acknowledgedByDoctor": false
+      },
+      {
+        "id": "rf-2",
+        "level": "AMBER",
+        "title": "Elevated Systemic Inflammatory Markers (CRP 34 mg/L, WBC 12.8)",
+        "description": "Significant leukocytosis with neutrophil predominance (82%) indicates active bacterial or acute inflammatory process rather than a simple viral cold.",
+        "recommendation": "Evaluate for focal consolidation. Monitor respiratory rate and temperature curve.",
+        "sourceFactIds": [
+          "f-7"
+        ],
+        "acknowledgedByDoctor": false
+      }
+    ],
+    "pat-1791706136688_x5py": []
+  },
+  "missingInfo": {
+    "pat-1024": [
+      {
+        "id": "mi-1",
+        "field": "Resting Oxygen Saturation (SpO2)",
+        "clinicalSignificance": "Crucial to determine if exertional breathlessness is accompanied by resting hypoxemia (<95%).",
+        "suggestedFollowUpQuestion": "Can the triage nurse check patient pulse oximeter reading immediately?",
+        "resolved": true,
+        "resolvedValue": "SpO2 97% on room air at triage kiosk"
+      },
+      {
+        "id": "mi-2",
+        "field": "Smoker / Tobacco History",
+        "clinicalSignificance": "Impacts baseline lung clearance and antibiotic selection.",
+        "suggestedFollowUpQuestion": "Do you currently smoke or have past history of tobacco use?",
+        "resolved": true,
+        "resolvedValue": "Non-smoker, no environmental smoke exposure"
+      }
+    ],
+    "pat-1791706136688_x5py": []
+  },
+  "contradictions": {
+    "pat-1024": [
+      {
+        "id": "contra-1",
+        "title": "CRITICAL DRUG ALLERGY CONFLICT: Penicillin / Beta-lactams",
+        "itemA": {
+          "source": "Previous Medical Record (St. Marks Clinic, Oct 2023)",
+          "statement": "Confirmed Penicillin allergy: Severe urticarial hives & facial rash following Amoxicillin 500mg.",
+          "date": "18/10/2023"
+        },
+        "itemB": {
+          "source": "Current Intake Interview (Question #10)",
+          "statement": "Patient responded: \"No known allergies as far as I remember.\"",
+          "date": "08/10/2026"
+        },
+        "resolutionRequired": "Physician must clarify drug allergy with patient before writing prescription. AI recommends NOT prescribing Amoxicillin, Augmentin, or Ampicillin.",
+        "resolved": false,
+        "doctorResolution": ""
+      }
+    ],
+    "pat-1791706136688_x5py": []
+  },
+  "briefs": {
+    "pat-1024": {
+      "id": "brief-1024",
+      "patientId": "pat-1024",
+      "generatedAt": "2026-10-08T08:37:00Z",
+      "priority": "AMBER",
+      "chiefComplaint": "Fever (102.2°F) and productive yellowish cough for 3 days",
+      "currentSymptoms": [
+        "High fever reaching 102.2°F with rigors and myalgias",
+        "Productive cough with yellow sputum",
+        "Mild exertional dyspnea climbing stairs",
+        "Fatigue and mild headache"
+      ],
+      "duration": "3 days (acute onset)",
+      "relevantHistory": [
+        "Mild Asthma (takes Salbutamol PRN)",
+        "Allergic rhinitis"
+      ],
+      "currentMedicines": [
+        "Paracetamol 650mg (self-administered x1)",
+        "Salbutamol 100mcg Inhaler"
+      ],
+      "allergies": [
+        "PENICILLIN ALLERGY (Conflicted: Old record documents severe urticaria; patient forgot in interview)"
+      ],
+      "redFlagCount": 2,
+      "missingInfoCount": 0,
+      "contradictionCount": 1,
+      "clinicalImpressionDraft": "Probable Community-Acquired Acute Bronchitis / Early Lower Respiratory Tract Infection in a patient with underlying Asthma. Systemic inflammation evident (WBC 12.8, CRP 34). MUST AVOID PENICILLIN DERIVATIVES.",
+      "doctorReviewed": false
+    }
+  },
+  "prescriptions": {
+    "pat-1024": {
+      "id": "rx-1024",
+      "prescriptionId": "MK-RX-2026-1024-EV",
+      "patientId": "MK1024",
+      "patientName": "Rahul Verma",
+      "patientAge": 42,
+      "patientGender": "Male",
+      "doctorId": "doc-01",
+      "doctorName": "Dr. Eleanor Vance, MD",
+      "doctorLicense": "GMC-734567",
+      "doctorSpecialty": "Internal Medicine & Pulmonology",
+      "clinicName": "MediKiosk Clinical Outpatient Care / St. Marks",
+      "issuedDate": "2026-10-08",
+      "status": "DRAFT",
+      "diagnosis": "Acute Bacterial Bronchitis with Mild Asthma Exacerbation (Penicillin-Allergic Patient)",
+      "medicines": [
+        {
+          "id": "med-1",
+          "medicineName": "Azithromycin Tablet (Macrolide - Penicillin Safe)",
+          "dosage": "500 mg",
+          "route": "Oral",
+          "frequency": "Once daily (OD) 1 hour before food",
+          "duration": "5 days",
+          "instructions": "Complete full 5-day course. Do not take with aluminum or magnesium antacids."
+        },
+        {
+          "id": "med-2",
+          "medicineName": "Paracetamol Tablet",
+          "dosage": "650 mg",
+          "route": "Oral",
+          "frequency": "Every 6 to 8 hours as needed for temperature >100°F or body ache",
+          "duration": "3 to 5 days",
+          "instructions": "Do not exceed 3,000 mg in 24 hours. Keep well hydrated."
+        },
+        {
+          "id": "med-3",
+          "medicineName": "Levocetirizine + Montelukast Tablet",
+          "dosage": "5 mg / 10 mg",
+          "route": "Oral",
+          "frequency": "Once daily at bedtime",
+          "duration": "7 days",
+          "instructions": "Helps control airway hyper-reactivity and allergic post-nasal drip."
+        },
+        {
+          "id": "med-4",
+          "medicineName": "Salbutamol Inhaler (100 mcg / actuation)",
+          "dosage": "2 puffs",
+          "route": "Inhalation via Spacer",
+          "frequency": "Every 4 to 6 hours as needed for wheeze or tightness",
+          "duration": "PRN (As needed)",
+          "instructions": "Rinse mouth with water after use."
+        }
+      ],
+      "generalInstructions": "1. Adequate oral hydration (2.5 - 3 liters warm fluids daily).\n2. Steam inhalation twice daily for chest congestion.\n3. Pulse oximetry monitoring twice daily. Return immediately if SpO2 drops below 94% or chest pain occurs.",
+      "doctorNotes": "Doctor Note: Penicillin allergy confirmed and verified in person. Patient warned never to take Amoxicillin/Augmentin. Macrolide chosen as safe therapeutic alternative.",
+      "dietAdvice": "Light, nutrient-dense diet. Avoid iced beverages or dusty environments.",
+      "followUpDate": "2026-10-13 (in 5 days if cough or fever persists)",
+      "qrCodeDataUrl": "",
+      "verificationHash": "v7f9c2d18a0e4b85c391f7a42e"
+    }
+  },
+  "timelines": {
+    "pat-1024": [
+      {
+        "id": "tl-1",
+        "date": "18 Oct 2023",
+        "title": "Outpatient Clinic Visit - St. Marks Medical Clinic",
+        "category": "Prescription",
+        "description": "Diagnosed with Acute Sinusitis and Mild Asthma. Developed adverse rash reaction to Amoxicillin. Switched to Azithromycin 500mg.",
+        "sourceDocId": "doc-rx-01",
+        "medicines": [
+          "Azithromycin 500mg",
+          "Salbutamol 100mcg"
+        ],
+        "relevantFinding": "Adverse Penicillin Reaction documented & flagged."
+      },
+      {
+        "id": "tl-2",
+        "date": "07 Oct 2026",
+        "title": "Diagnostic Blood Pathology Panel",
+        "category": "Lab Test",
+        "description": "Complete blood count and metabolic profile ordered due to onset of fever.",
+        "sourceDocId": "doc-lab-02",
+        "relevantFinding": "WBC 12.8 x10³/µL (Leukocytosis), CRP 34 mg/L (Elevated)."
+      },
+      {
+        "id": "tl-3",
+        "date": "08 Oct 2026 (Today)",
+        "title": "MediKiosk AI Adaptive Intake & Clinical Extraction",
+        "category": "Clinical Interview",
+        "description": "Adaptive triage completed. Chief complaint: 3-day fever & productive cough with mild stair dyspnea. Critical allergy contradiction flagged.",
+        "relevantFinding": "Priority Amber - Doctor consultation requested."
+      }
+    ],
+    "pat-1791706136688_x5py": [
+      {
+        "id": "tl-reg-1791706136693",
+        "date": "Today",
+        "title": "MediKiosk Patient Registration",
+        "category": "Clinical Interview",
+        "description": "Patient created account and initiated pre-consultation intake."
+      }
+    ]
+  },
+  "auditLogs": [
+    {
+      "id": "aud-1791706137014-121",
+      "timestamp": "2026-10-11 08:08:57",
+      "actor": "Marcus Brody",
+      "actorRole": "PATIENT",
+      "action": "User Signed Out",
+      "entityType": "PATIENT",
+      "entityId": "usr-1791706136688_x5py",
+      "details": "Session terminated.",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "aud-1791706137004-201",
+      "timestamp": "2026-10-11 08:08:57",
+      "actor": "Dr. Eleanor Vance, MD",
+      "actorRole": "DOCTOR",
+      "action": "Doctor Medical Fact Verification",
+      "entityType": "DOCTOR_REVIEW",
+      "entityId": "f-1",
+      "details": "Fact [Fever (102.2°F) with rigors an...] status updated to verified=true.",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "aud-1791706136928-835",
+      "timestamp": "2026-10-11 08:08:56",
+      "actor": "Marcus Brody",
+      "actorRole": "PATIENT",
+      "action": "User Signed In (PATIENT)",
+      "entityType": "PATIENT",
+      "entityId": "usr-1791706136688_x5py",
+      "details": "Authenticated successfully via PATIENT portal.",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "aud-1791706136863-723",
+      "timestamp": "2026-10-11 08:08:56",
+      "actor": "Dr. John Watson, MD",
+      "actorRole": "DOCTOR",
+      "action": "User Signed In (DOCTOR)",
+      "entityType": "DOCTOR_REVIEW",
+      "entityId": "doc-103",
+      "details": "Authenticated successfully via DOCTOR portal.",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "aud-1791706136808-568",
+      "timestamp": "2026-10-11 08:08:56",
+      "actor": "Medical Board Administrator",
+      "actorRole": "ADMIN",
+      "action": "Doctor Credentials Verified & Approved",
+      "entityType": "DOCTOR_REVIEW",
+      "entityId": "doc-103",
+      "details": "Doctor Dr. John Watson, MD (GMC-883912) approved for Doctor Dashboard clinical access.",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "aud-1791706136750-903",
+      "timestamp": "2026-10-11 08:08:56",
+      "actor": "Dr. John Watson, MD",
+      "actorRole": "DOCTOR",
+      "action": "Doctor Registration Submitted (Pending Verification)",
+      "entityType": "DOCTOR_REVIEW",
+      "entityId": "doc-103",
+      "details": "New doctor registration submitted for Dr. John Watson, MD (GMC-883912). Status: Pending verification.",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "aud-1791706136694-140",
+      "timestamp": "2026-10-11 08:08:56",
+      "actor": "Marcus Brody",
+      "actorRole": "PATIENT",
+      "action": "Patient Account Registered",
+      "entityType": "PATIENT",
+      "entityId": "MK6805",
+      "details": "Registered patient account with email patient.marcus.1791706136539@testclinic.com.",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "aud-1",
+      "timestamp": "2026-10-08 08:25:12",
+      "actor": "Rahul Verma (Patient)",
+      "actorRole": "PATIENT",
+      "action": "Patient Registration Completed",
+      "entityType": "PATIENT",
+      "entityId": "MK1024",
+      "details": "Profile created at Kiosk Terminal #3 with emergency contact.",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "aud-2",
+      "timestamp": "2026-10-08 08:25:40",
+      "actor": "Rahul Verma (Patient)",
+      "actorRole": "PATIENT",
+      "action": "Explicit Medical Processing Consent Signed",
+      "entityType": "CONSENT",
+      "entityId": "MK1024",
+      "details": "Digital informed consent granted for AI triage preparation & OCR document extraction.",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "aud-3",
+      "timestamp": "2026-10-08 08:34:15",
+      "actor": "MediKiosk Clinical Assistant",
+      "actorRole": "PATIENT",
+      "action": "Adaptive Interview Completed",
+      "entityType": "AI_BRIEF",
+      "entityId": "int-1024",
+      "details": "11 conversational turns parsed; chief complaint, symptom duration & severity extracted.",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "aud-4",
+      "timestamp": "2026-10-08 08:35:55",
+      "actor": "System OCR Service",
+      "actorRole": "PATIENT",
+      "action": "Document Ingestion & OCR Extraction",
+      "entityType": "OCR",
+      "entityId": "doc-rx-01",
+      "details": "Extracted prescription text: Found Penicillin allergy & Azithromycin history.",
+      "status": "SUCCESS"
+    },
+    {
+      "id": "aud-5",
+      "timestamp": "2026-10-08 08:37:02",
+      "actor": "MediKiosk Safety Engine",
+      "actorRole": "PATIENT",
+      "action": "Safety Contradiction & Red Flags Triggered",
+      "entityType": "AI_BRIEF",
+      "entityId": "brief-1024",
+      "details": "AMBER Priority assigned: Conflict detected between past Penicillin allergy and interview response.",
+      "status": "WARNING"
+    }
+  ]
+}

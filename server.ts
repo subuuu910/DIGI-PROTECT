@@ -2,6 +2,8 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+import crypto from 'node:crypto';
 import { GoogleGenAI } from '@google/genai';
 import {
   INITIAL_PATIENTS,
@@ -42,13 +44,159 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
+
+// Stored User Interface
+export interface StoredUser {
+  id: string;
+  name: string;
+  email: string; // stored lowercase
+  phone?: string;
+  role: 'PATIENT' | 'DOCTOR';
+  isDoctorApproved: boolean;
+  approvalStatus: 'APPROVED' | 'PENDING' | 'REJECTED';
+  doctorLicense?: string;
+  doctorSpecialty?: string;
+  hospitalAffiliation?: string;
+  avatarUrl?: string;
+  age?: number;
+  gender?: string;
+  salt: string;
+  passwordHash: string;
+  createdAt: string;
+}
+
+// Password hashing & verification
+function hashPassword(password: string, saltInput?: string): { salt: string; hash: string } {
+  const salt = saltInput || crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return { salt, hash };
+}
+
+function verifyPassword(password: string, salt: string, hash: string): boolean {
+  try {
+    const computed = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+    return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(hash));
+  } catch {
+    return false;
+  }
+}
+
+function toSafeUser(user: StoredUser): User {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    avatarUrl: user.avatarUrl,
+    doctorLicense: user.doctorLicense,
+    doctorSpecialty: user.doctorSpecialty,
+    hospitalAffiliation: user.hospitalAffiliation,
+    isDoctorApproved: user.isDoctorApproved,
+    approvalStatus: user.approvalStatus,
+    phone: user.phone,
+  };
+}
+
+// In-Memory User and Session Database
+const usersByEmail = new Map<string, StoredUser>();
+const usersById = new Map<string, StoredUser>();
+
+// Pre-seeded patient user (Patient@123)
+const seedPatientPass = hashPassword('Patient@123');
+const SEED_PATIENT: StoredUser = {
+  id: 'pat-user-01',
+  name: 'Patient User',
+  email: 'patient@medikiosk.health',
+  phone: '+1 555-0199',
+  role: 'PATIENT',
+  isDoctorApproved: false,
+  approvalStatus: 'APPROVED',
+  age: 34,
+  gender: 'Male',
+  salt: seedPatientPass.salt,
+  passwordHash: seedPatientPass.hash,
+  createdAt: new Date().toISOString(),
+};
+usersByEmail.set(SEED_PATIENT.email.toLowerCase(), SEED_PATIENT);
+usersById.set(SEED_PATIENT.id, SEED_PATIENT);
+
+// Pre-seeded verified doctor (Doctor@123)
+const seedDoctorPass = hashPassword('Doctor@123');
+const SEED_VERIFIED_DOCTOR: StoredUser = {
+  id: 'doc-01',
+  name: 'Dr. Eleanor Vance, MD',
+  email: 'e.vance@medikiosk.health',
+  phone: '+1 555-0144',
+  role: 'DOCTOR',
+  isDoctorApproved: true,
+  approvalStatus: 'APPROVED',
+  doctorLicense: 'GMC-UK-789421',
+  doctorSpecialty: 'Internal Medicine & Cardiology',
+  hospitalAffiliation: 'MediKiosk Clinical Outpatient Care',
+  avatarUrl: '/src/assets/images/avatar_doctor_verma_1791477926306.jpg',
+  salt: seedDoctorPass.salt,
+  passwordHash: seedDoctorPass.hash,
+  createdAt: new Date().toISOString(),
+};
+usersByEmail.set(SEED_VERIFIED_DOCTOR.email.toLowerCase(), SEED_VERIFIED_DOCTOR);
+usersById.set(SEED_VERIFIED_DOCTOR.id, SEED_VERIFIED_DOCTOR);
+
+// Pre-seeded unverified doctor (Doctor@123)
+const SEED_UNVERIFIED_DOCTOR: StoredUser = {
+  id: 'doc-pending-02',
+  name: 'Dr. Julian Hayes, MD',
+  email: 'j.hayes@medikiosk.health',
+  phone: '+1 555-0188',
+  role: 'DOCTOR',
+  isDoctorApproved: false,
+  approvalStatus: 'PENDING',
+  doctorLicense: 'GMC-PENDING-8821',
+  doctorSpecialty: 'Cardiology Fellow (Credentials Under Review)',
+  hospitalAffiliation: 'General Hospital (Verification Pending)',
+  avatarUrl: '/src/assets/images/avatar_doctor_verma_1791477926306.jpg',
+  salt: seedDoctorPass.salt,
+  passwordHash: seedDoctorPass.hash,
+  createdAt: new Date().toISOString(),
+};
+usersByEmail.set(SEED_UNVERIFIED_DOCTOR.email.toLowerCase(), SEED_UNVERIFIED_DOCTOR);
+usersById.set(SEED_UNVERIFIED_DOCTOR.id, SEED_UNVERIFIED_DOCTOR);
+
+// Pending OTP Registration tickets
+interface PendingRegistration {
+  ticketId: string;
+  role: 'PATIENT' | 'DOCTOR';
+  fullName: string;
+  email: string; // lowercase
+  phone: string;
+  age?: number;
+  gender?: string;
+  doctorLicense?: string;
+  doctorSpecialty?: string;
+  salt: string;
+  passwordHash: string;
+  otp: string; // 6-digit random
+  deliveryMethod: 'email' | 'sms';
+  createdAt: number;
+  expiresAt: number;
+  lastSentAt: number;
+  attempts: number;
+}
+const pendingRegistrations = new Map<string, PendingRegistration>();
+
+// Active Sessions
+interface ActiveSession {
+  sessionId: string;
+  userId: string;
+  role: 'PATIENT' | 'DOCTOR';
+  createdAt: number;
+  expiresAt: number;
+}
+const sessions = new Map<string, ActiveSession>();
 
 // In-Memory Clinical Database
 const db = {
-  currentUser: {
-    ...CURRENT_DOCTOR,
-    activeRole: 'PATIENT' as 'PATIENT' | 'DOCTOR', // User can toggle seamlessly
-  },
+  currentUser: toSafeUser(SEED_PATIENT) as User,
   patients: [...INITIAL_PATIENTS] as Patient[],
   interviews: new Map<string, InterviewSession>([
     ['pat-1024', { ...INITIAL_INTERVIEW_RAHUL }],
@@ -123,10 +271,7 @@ function logAudit(
 }
 
 function resetDatabaseToDemo() {
-  db.currentUser = {
-    ...CURRENT_DOCTOR,
-    activeRole: 'PATIENT',
-  };
+  db.currentUser = toSafeUser(SEED_PATIENT);
   db.patients = JSON.parse(JSON.stringify(INITIAL_PATIENTS));
   db.interviews = new Map<string, InterviewSession>([
     ['pat-1024', JSON.parse(JSON.stringify(INITIAL_INTERVIEW_RAHUL))],
@@ -171,7 +316,7 @@ app.post('/api/demo/reset', (req, res) => {
     'Demo Scenario Restored / Refreshed',
     'PATIENT',
     'MK1024',
-    'Restored initial clinical triage state for Rahul Verma (MK1024).'
+    'Restored initial clinical triage state for patient records.'
   );
   res.json({
     success: true,
@@ -189,29 +334,447 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Current User & Active Role
-app.get('/api/auth/current-user', (req, res) => {
+// Session Resolution Middleware
+app.use((req, res, next) => {
+  const token =
+    (req.cookies && req.cookies.medikiosk_session) ||
+    (req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer ') &&
+      req.headers.authorization.slice(7));
+
+  if (token && sessions.has(token)) {
+    const session = sessions.get(token)!;
+    if (session.expiresAt > Date.now()) {
+      const user = usersById.get(session.userId);
+      if (user) {
+        (req as any).user = user;
+        db.currentUser = toSafeUser(user);
+      }
+    } else {
+      sessions.delete(token);
+    }
+  }
+  next();
+});
+
+// Authorization Middleware: Doctor Role & Verification Check
+function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const user = (req as any).user;
+  if (!user) {
+    return res.status(401).json({
+      error: 'Authentication required. Please log in to access this resource.',
+      code: 'UNAUTHORIZED',
+    });
+  }
+  next();
+}
+
+function requireVerifiedDoctor(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const user = (req as any).user;
+  if (!user || user.role !== 'DOCTOR') {
+    return res.status(403).json({
+      error: 'Access denied: Doctor role required.',
+      code: 'FORBIDDEN_DOCTOR_ROLE_REQUIRED',
+    });
+  }
+  if (!user.isDoctorApproved) {
+    return res.status(403).json({
+      error: 'Your doctor account is awaiting verification. Doctor Dashboard access will be available after approval.',
+      code: 'DOCTOR_VERIFICATION_PENDING',
+    });
+  }
+  next();
+}
+
+// -----------------------------------------------------------------------------
+// AUTHENTICATION API ROUTES
+// -----------------------------------------------------------------------------
+
+// Check Email Uniqueness (Case-Insensitive)
+app.post('/api/auth/check-email', (req, res) => {
+  const email = (req.body.email || '').toLowerCase().trim();
+  if (!email) return res.json({ exists: false });
+  if (usersByEmail.has(email)) {
+    return res.json({
+      exists: true,
+      message: 'Account already found. Please log in instead.',
+    });
+  }
+  return res.json({ exists: false });
+});
+
+// Sign Up: Patient or Doctor
+app.post('/api/auth/signup', (req, res) => {
+  const {
+    role,
+    fullName,
+    email,
+    phone,
+    password,
+    confirmPassword,
+    age,
+    gender,
+    doctorLicense,
+    doctorSpecialty,
+    deliveryMethod,
+  } = req.body;
+
+  if (!role || !['PATIENT', 'DOCTOR'].includes(role)) {
+    return res.status(400).json({ error: 'Valid role (PATIENT or DOCTOR) is required.' });
+  }
+
+  if (!fullName || !email || !phone || !password) {
+    return res.status(400).json({ error: 'Full name, email, mobile number, and password are required.' });
+  }
+
+  if (confirmPassword && password !== confirmPassword) {
+    return res.status(400).json({ error: 'Passwords do not match.' });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+  }
+
+  if (role === 'DOCTOR') {
+    if (!doctorLicense || !doctorLicense.trim()) {
+      return res.status(400).json({ error: 'Medical Registration Number is required for doctor accounts.' });
+    }
+    if (!doctorSpecialty || !doctorSpecialty.trim()) {
+      return res.status(400).json({ error: 'Medical Specialization is required for doctor accounts.' });
+    }
+  }
+
+  // Case-insensitive email uniqueness check
+  const normEmail = email.toLowerCase().trim();
+  if (usersByEmail.has(normEmail)) {
+    return res.status(409).json({
+      error: 'Account already found. Please log in instead.',
+      code: 'ACCOUNT_ALREADY_EXISTS',
+    });
+  }
+
+  // Generate 6-digit random OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const ticketId = `ticket-${crypto.randomUUID()}`;
+  const { salt, hash } = hashPassword(password);
+  const now = Date.now();
+
+  const registration: PendingRegistration = {
+    ticketId,
+    role,
+    fullName: fullName.trim(),
+    email: normEmail,
+    phone: phone.trim(),
+    age: age ? parseInt(age, 10) : undefined,
+    gender,
+    doctorLicense: doctorLicense?.trim(),
+    doctorSpecialty: doctorSpecialty?.trim(),
+    salt,
+    passwordHash: hash,
+    otp,
+    deliveryMethod: deliveryMethod === 'sms' ? 'sms' : 'email',
+    createdAt: now,
+    expiresAt: now + 5 * 60 * 1000,
+    lastSentAt: now,
+    attempts: 0,
+  };
+
+  pendingRegistrations.set(ticketId, registration);
+
+  logAudit(
+    fullName,
+    role,
+    'Account Registration Initiated - OTP Generated',
+    'PATIENT',
+    ticketId,
+    `Generated ${registration.deliveryMethod} OTP verification ticket for ${normEmail}.`
+  );
+
   res.json({
-    user: db.currentUser,
-    doctorProfile: CURRENT_DOCTOR,
+    success: true,
+    ticketId,
+    demoOtp: otp,
+    expiresAt: registration.expiresAt,
+    deliveryMethod: registration.deliveryMethod,
+    message: 'Registration initiated. Please verify with the demo OTP provided.',
   });
 });
 
-app.post('/api/auth/switch-role', (req, res) => {
-  const { role } = req.body;
-  if (role === 'PATIENT' || role === 'DOCTOR') {
-    db.currentUser.activeRole = role;
-    logAudit(
-      db.currentUser.name,
-      role,
-      `Switched Active Workspace to ${role}`,
-      'PATIENT',
-      db.currentUser.id,
-      `User navigated to ${role} interface.`
-    );
-    return res.json({ success: true, role });
+// Verify OTP & Activate Account
+app.post('/api/auth/verify-otp', (req, res) => {
+  const { ticketId, otp } = req.body;
+  if (!ticketId || !otp) {
+    return res.status(400).json({ error: 'Registration ticket ID and OTP code are required.' });
   }
-  res.status(400).json({ error: 'Invalid role specified' });
+
+  const ticket = pendingRegistrations.get(ticketId);
+  if (!ticket) {
+    return res.status(404).json({ error: 'Verification session expired or not found. Please sign up again.' });
+  }
+
+  if (Date.now() > ticket.expiresAt) {
+    pendingRegistrations.delete(ticketId);
+    return res.status(400).json({ error: 'OTP has expired. Please request a new OTP.' });
+  }
+
+  ticket.attempts += 1;
+  if (ticket.attempts > 5) {
+    pendingRegistrations.delete(ticketId);
+    return res.status(429).json({ error: 'Too many failed verification attempts. Please sign up again.' });
+  }
+
+  if (ticket.otp !== otp.trim()) {
+    const remaining = 5 - ticket.attempts;
+    return res.status(400).json({
+      error: `Incorrect OTP code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`,
+      attemptsRemaining: remaining,
+    });
+  }
+
+  if (usersByEmail.has(ticket.email)) {
+    pendingRegistrations.delete(ticketId);
+    return res.status(409).json({ error: 'Account already found. Please log in instead.' });
+  }
+
+  const userId = ticket.role === 'DOCTOR' ? `doc-${Date.now()}` : `pat-user-${Date.now()}`;
+  const isDoctor = ticket.role === 'DOCTOR';
+
+  const newUser: StoredUser = {
+    id: userId,
+    name: ticket.fullName,
+    email: ticket.email,
+    phone: ticket.phone,
+    role: ticket.role,
+    isDoctorApproved: isDoctor ? false : false,
+    approvalStatus: isDoctor ? 'PENDING' : 'APPROVED',
+    doctorLicense: ticket.doctorLicense,
+    doctorSpecialty: ticket.doctorSpecialty,
+    hospitalAffiliation: isDoctor ? 'Medical Council (Verification Pending)' : undefined,
+    avatarUrl: isDoctor ? '/src/assets/images/avatar_doctor_verma_1791477926306.jpg' : undefined,
+    age: ticket.age,
+    gender: ticket.gender,
+    salt: ticket.salt,
+    passwordHash: ticket.passwordHash,
+    createdAt: new Date().toISOString(),
+  };
+
+  usersByEmail.set(ticket.email, newUser);
+  usersById.set(userId, newUser);
+
+  if (ticket.role === 'PATIENT') {
+    const patientIdCode = `MK${Math.floor(1000 + Math.random() * 9000)}`;
+    const patRecord: Patient = {
+      id: userId,
+      patientId: patientIdCode,
+      fullName: ticket.fullName,
+      age: ticket.age || 32,
+      gender: (ticket.gender as any) || 'Male',
+      dob: '1994-06-20',
+      phone: ticket.phone,
+      email: ticket.email,
+      emergencyContact: { name: 'Emergency Contact', relationship: 'Family', phone: ticket.phone },
+      existingConditions: [],
+      knownAllergies: [],
+      currentMedicines: [],
+      consentGiven: true,
+      priority: 'GREEN',
+      status: 'Waiting',
+      registeredAt: 'Just now',
+    };
+    db.patients.unshift(patRecord);
+  }
+
+  const sessionId = crypto.randomUUID();
+  const sessionExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  sessions.set(sessionId, {
+    sessionId,
+    userId,
+    role: ticket.role,
+    createdAt: Date.now(),
+    expiresAt: sessionExpiry,
+  });
+
+  res.cookie('medikiosk_session', sessionId, {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  pendingRegistrations.delete(ticketId);
+
+  logAudit(
+    newUser.name,
+    newUser.role,
+    'Account Verified & Activated',
+    'PATIENT',
+    userId,
+    `OTP verified successfully. User registered as ${newUser.role} (${newUser.approvalStatus}).`
+  );
+
+  res.json({
+    success: true,
+    user: toSafeUser(newUser),
+    message: isDoctor
+      ? 'Doctor account created and pending verification.'
+      : 'Patient account verified successfully.',
+  });
+});
+
+// Resend OTP with 30s Cooldown
+app.post('/api/auth/resend-otp', (req, res) => {
+  const { ticketId, deliveryMethod } = req.body;
+  const ticket = pendingRegistrations.get(ticketId);
+  if (!ticket) {
+    return res.status(404).json({ error: 'Registration request not found. Please sign up again.' });
+  }
+
+  const now = Date.now();
+  const elapsedSec = (now - ticket.lastSentAt) / 1000;
+  if (elapsedSec < 30) {
+    return res.status(429).json({
+      error: 'Please wait before requesting another OTP.',
+      cooldownSeconds: Math.ceil(30 - elapsedSec),
+    });
+  }
+
+  const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+  ticket.otp = newOtp;
+  ticket.attempts = 0;
+  ticket.lastSentAt = now;
+  ticket.expiresAt = now + 5 * 60 * 1000;
+  if (deliveryMethod) ticket.deliveryMethod = deliveryMethod === 'sms' ? 'sms' : 'email';
+
+  res.json({
+    success: true,
+    ticketId,
+    demoOtp: newOtp,
+    expiresAt: ticket.expiresAt,
+    cooldownSeconds: 30,
+    message: 'A fresh OTP has been generated.',
+  });
+});
+
+// Login
+app.post('/api/auth/login', (req, res) => {
+  const { email, password, accountType } = req.body;
+  let user: StoredUser | undefined;
+
+  if (accountType) {
+    if (accountType === 'patient') user = usersByEmail.get('patient@medikiosk.health');
+    else if (accountType === 'doctor_verified') user = usersByEmail.get('e.vance@medikiosk.health');
+    else if (accountType === 'doctor_unverified') user = usersByEmail.get('j.hayes@medikiosk.health');
+  } else {
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email address and password are required.' });
+    }
+    const normEmail = email.toLowerCase().trim();
+    const candidate = usersByEmail.get(normEmail);
+    if (!candidate || !verifyPassword(password, candidate.salt, candidate.passwordHash)) {
+      return res.status(401).json({ error: 'Invalid email address or password.' });
+    }
+    user = candidate;
+  }
+
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid credentials. User not found.' });
+  }
+
+  const sessionId = crypto.randomUUID();
+  const sessionExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  sessions.set(sessionId, {
+    sessionId,
+    userId: user.id,
+    role: user.role,
+    createdAt: Date.now(),
+    expiresAt: sessionExpiry,
+  });
+
+  res.cookie('medikiosk_session', sessionId, {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  db.currentUser = toSafeUser(user);
+
+  logAudit(
+    user.name,
+    user.role,
+    `User Logged In (${user.role})`,
+    'PATIENT',
+    user.id,
+    `Session established for ${user.name}. Approval: ${user.isDoctorApproved}.`
+  );
+
+  res.json({ success: true, user: toSafeUser(user) });
+});
+
+// Logout
+app.post('/api/auth/logout', (req, res) => {
+  const token =
+    (req.cookies && req.cookies.medikiosk_session) ||
+    (req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer ') &&
+      req.headers.authorization.slice(7));
+
+  if (token) {
+    sessions.delete(token);
+  }
+
+  res.clearCookie('medikiosk_session', { path: '/' });
+  res.json({ success: true, message: 'Logged out successfully.' });
+});
+
+// Current User Session
+app.get('/api/auth/current-user', (req, res) => {
+  const user = (req as any).user;
+  if (!user) {
+    return res.status(401).json({ user: null });
+  }
+
+  const verifiedDoctor = usersByEmail.get('e.vance@medikiosk.health');
+  res.json({
+    user: toSafeUser(user),
+    doctorProfile:
+      user.role === 'DOCTOR'
+        ? toSafeUser(user)
+        : verifiedDoctor
+        ? toSafeUser(verifiedDoctor)
+        : toSafeUser(user),
+  });
+});
+
+// Administrator Approval for Doctor Accounts
+app.post('/api/auth/admin/approve-doctor', (req, res) => {
+  const { doctorId } = req.body;
+  let user: StoredUser | undefined;
+
+  if (doctorId) {
+    user = usersById.get(doctorId);
+  }
+  if (!user) {
+    user = usersByEmail.get('j.hayes@medikiosk.health');
+  }
+
+  if (!user || user.role !== 'DOCTOR') {
+    return res.status(404).json({ error: 'Doctor account not found.' });
+  }
+
+  user.isDoctorApproved = true;
+  user.approvalStatus = 'APPROVED';
+
+  logAudit(
+    'Hospital Administrator',
+    'ADMIN',
+    'Doctor Verification Approved',
+    'DOCTOR_REVIEW',
+    user.id,
+    `Administrative board confirmed medical credentials for ${user.name} (${user.doctorLicense}).`
+  );
+
+  res.json({ success: true, user: toSafeUser(user) });
 });
 
 // Patients API
@@ -551,7 +1114,7 @@ app.get('/api/clinical/:patientId', (req, res) => {
 });
 
 // Doctor Actions: Verify/Edit Fact
-app.post('/api/doctor/facts/:factId/verify', (req, res) => {
+app.post('/api/doctor/facts/:factId/verify', requireVerifiedDoctor, (req, res) => {
   const { factId } = req.params;
   const { patientId, verified, doctorNotes } = req.body;
 
@@ -577,7 +1140,7 @@ app.post('/api/doctor/facts/:factId/verify', (req, res) => {
 });
 
 // Doctor Actions: Resolve Contradiction
-app.post('/api/doctor/contradictions/:contraId/resolve', (req, res) => {
+app.post('/api/doctor/contradictions/:contraId/resolve', requireVerifiedDoctor, (req, res) => {
   const { contraId } = req.params;
   const { patientId, doctorResolution } = req.body;
 
@@ -609,7 +1172,7 @@ app.post('/api/doctor/contradictions/:contraId/resolve', (req, res) => {
 });
 
 // Doctor Actions: Acknowledge Red Flag
-app.post('/api/doctor/redflags/:flagId/acknowledge', (req, res) => {
+app.post('/api/doctor/redflags/:flagId/acknowledge', requireVerifiedDoctor, (req, res) => {
   const { flagId } = req.params;
   const { patientId } = req.body;
 
@@ -634,7 +1197,7 @@ app.post('/api/doctor/redflags/:flagId/acknowledge', (req, res) => {
 });
 
 // Doctor Actions: Review & Confirm Brief
-app.post('/api/doctor/brief/:patientId/confirm', (req, res) => {
+app.post('/api/doctor/brief/:patientId/confirm', requireVerifiedDoctor, (req, res) => {
   const { patientId } = req.params;
   const { clinicalImpressionDraft, doctorNotes } = req.body;
 
@@ -701,7 +1264,7 @@ app.get('/api/prescriptions/:patientId', (req, res) => {
 });
 
 // Update Prescription Draft (Doctor only)
-app.put('/api/prescriptions/:patientId', (req, res) => {
+app.put('/api/prescriptions/:patientId', requireVerifiedDoctor, (req, res) => {
   const { patientId } = req.params;
   const data = req.body;
 
@@ -720,7 +1283,7 @@ app.put('/api/prescriptions/:patientId', (req, res) => {
 });
 
 // Authorize Prescription (Doctor Only with Digital Signature)
-app.post('/api/prescriptions/:patientId/authorize', (req, res) => {
+app.post('/api/prescriptions/:patientId/authorize', requireVerifiedDoctor, (req, res) => {
   const { patientId } = req.params;
   const { digitalSignaturePassword, doctorNotes } = req.body;
 
@@ -823,8 +1386,8 @@ app.get('/api/prescriptions/verify/:prescriptionId', (req, res) => {
   res.json(verificationSummary);
 });
 
-// Audit Logs API
-app.get('/api/audit-logs', (req, res) => {
+// Audit Logs API (Doctor/Admin access)
+app.get('/api/audit-logs', requireVerifiedDoctor, (req, res) => {
   res.json(db.auditLogs);
 });
 

@@ -1,7 +1,8 @@
 import React from 'react';
+import { AppView } from '../../types';
 
 interface FooterProps {
-  onNavigate: (view: 'landing' | 'patient' | 'doctor' | 'verify' | 'about') => void;
+  onNavigate: (view: AppView) => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {

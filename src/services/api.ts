@@ -5,6 +5,7 @@ import {
   EPrescription,
   AuditLogEntry,
   User,
+  UserRole,
   DoctorBrief,
   MedicalFact,
   RedFlag,
@@ -24,17 +25,112 @@ export interface ClinicalDataPackage {
 
 export const api = {
   // Auth & Roles
-  async getCurrentUser(): Promise<{ user: User & { activeRole: 'PATIENT' | 'DOCTOR' }; doctorProfile: User }> {
+  async getCurrentUser(): Promise<{ user: (User & { activeRole?: 'PATIENT' | 'DOCTOR' }) | null; doctorProfile?: User }> {
     const res = await fetch('/api/auth/current-user');
-    if (!res.ok) throw new Error('Failed to fetch user state');
+    if (!res.ok) {
+      if (res.status === 401) return { user: null };
+      throw new Error('Failed to fetch user state');
+    }
     return res.json();
   },
 
-  async switchRole(role: 'PATIENT' | 'DOCTOR'): Promise<{ success: boolean; role: string }> {
+  async checkEmail(email: string): Promise<{ exists: boolean; message?: string }> {
+    const res = await fetch('/api/auth/check-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to check email');
+    }
+    return res.json();
+  },
+
+  async signUp(
+    payload: (
+      | ({ role: 'PATIENT' } & Record<string, any>)
+      | ({ role: 'DOCTOR' } & Record<string, any>)
+    )
+  ): Promise<{ success: boolean; ticketId: string; demoOtp: string; expiresAt: number; deliveryMethod: string }> {
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to sign up');
+    }
+    return res.json();
+  },
+
+  async verifyOtp(ticketId: string, otp: string): Promise<{ success: boolean; user: User }> {
+    const res = await fetch('/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticketId, otp }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to verify OTP');
+    }
+    return res.json();
+  },
+
+  async resendOtp(ticketId: string, deliveryMethod?: 'email' | 'sms'): Promise<{ success: boolean; ticketId: string; demoOtp: string; expiresAt: number; cooldownSeconds: number }> {
+    const res = await fetch('/api/auth/resend-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticketId, deliveryMethod }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to resend OTP');
+    }
+    return res.json();
+  },
+
+  async login(credentials: { email: string; password: string } | { accountType: string }): Promise<{ success: boolean; user: User }> {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to log in');
+    }
+    return res.json();
+  },
+
+  async approveDoctor(doctorId: string): Promise<{ success: boolean; user: User }> {
+    const res = await fetch('/api/auth/admin/approve-doctor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ doctorId }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to approve doctor');
+    }
+    return res.json();
+  },
+
+  async logout(): Promise<{ success: boolean }> {
+    const res = await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Failed to log out');
+    return res.json();
+  },
+
+  async switchRole(role: UserRole, isApproved?: boolean): Promise<{ success: boolean; role: string; user: User }> {
     const res = await fetch('/api/auth/switch-role', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role }),
+      body: JSON.stringify({ role, isApproved }),
     });
     if (!res.ok) throw new Error('Failed to switch role');
     return res.json();

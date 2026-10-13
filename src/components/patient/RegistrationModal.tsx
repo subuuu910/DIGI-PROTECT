@@ -132,7 +132,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Rahul Verma"
+                  placeholder="e.g. Full Legal Name"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   className={`w-full px-3 py-2 border rounded-md text-xs sm:text-sm ${

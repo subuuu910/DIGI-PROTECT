@@ -38,6 +38,8 @@ interface DoctorPortalPageProps {
   onUpdatePrescriptionDraft: (data: Partial<EPrescription>) => Promise<void>;
   onAuthorizePrescription: (doctorNotes?: string) => Promise<void>;
   loading: boolean;
+  activeViewMode?: 'workspace' | 'queue';
+  onViewModeChange?: (mode: 'workspace' | 'queue') => void;
 }
 
 export const DoctorPortalPage: React.FC<DoctorPortalPageProps> = ({
@@ -61,13 +63,29 @@ export const DoctorPortalPage: React.FC<DoctorPortalPageProps> = ({
   onUpdatePrescriptionDraft,
   onAuthorizePrescription,
   loading,
+  activeViewMode = 'workspace',
+  onViewModeChange,
 }) => {
-  const [viewMode, setViewMode] = useState<'workspace' | 'queue'>('workspace');
+  const [internalViewMode, setInternalViewMode] = useState<'workspace' | 'queue'>(activeViewMode);
+
+  React.useEffect(() => {
+    if (activeViewMode) {
+      setInternalViewMode(activeViewMode);
+    }
+  }, [activeViewMode]);
+
+  const viewMode = activeViewMode || internalViewMode;
+
+  const handleSetViewMode = (mode: 'workspace' | 'queue') => {
+    setInternalViewMode(mode);
+    if (onViewModeChange) onViewModeChange(mode);
+  };
+
   const [selectedDocPreview, setSelectedDocPreview] = useState<MedicalDocument | null>(null);
 
   const handleSelectFromQueue = (patientId: string) => {
     onSelectPatient(patientId);
-    setViewMode('workspace');
+    handleSetViewMode('workspace');
   };
 
   return (
@@ -76,7 +94,7 @@ export const DoctorPortalPage: React.FC<DoctorPortalPageProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs">
           <button
-            onClick={() => setViewMode('queue')}
+            onClick={() => handleSetViewMode('queue')}
             className={`flex items-center gap-1 font-medium transition-colors ${
               viewMode === 'queue' ? 'text-slate-900 font-bold' : 'text-slate-500 hover:text-slate-800'
             }`}
@@ -86,7 +104,7 @@ export const DoctorPortalPage: React.FC<DoctorPortalPageProps> = ({
           </button>
           <span className="text-slate-300">/</span>
           <button
-            onClick={() => setViewMode('workspace')}
+            onClick={() => handleSetViewMode('workspace')}
             className={`font-medium transition-colors ${
               viewMode === 'workspace' ? 'text-cyan-800 font-bold' : 'text-slate-500 hover:text-slate-800'
             }`}
@@ -98,7 +116,7 @@ export const DoctorPortalPage: React.FC<DoctorPortalPageProps> = ({
         <div className="flex items-center gap-2">
           {viewMode === 'workspace' ? (
             <button
-              onClick={() => setViewMode('queue')}
+              onClick={() => handleSetViewMode('queue')}
               className="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -106,7 +124,7 @@ export const DoctorPortalPage: React.FC<DoctorPortalPageProps> = ({
             </button>
           ) : (
             <button
-              onClick={() => setViewMode('workspace')}
+              onClick={() => handleSetViewMode('workspace')}
               className="px-3 py-1.5 bg-cyan-700 hover:bg-cyan-800 text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors"
             >
               <Stethoscope className="w-3.5 h-3.5" />

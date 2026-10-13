@@ -88,9 +88,9 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({ initialId })
           </button>
         </form>
 
-        {/* Quick Demo Pre-fills */}
+        {/* Sample Prescription Query */}
         <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-500">
-          <span>Demo Prescriptions:</span>
+          <span>Sample Prescription:</span>
           <button
             type="button"
             onClick={() => {
@@ -99,7 +99,7 @@ export const VerificationPage: React.FC<VerificationPageProps> = ({ initialId })
             }}
             className="text-cyan-700 hover:text-cyan-800 underline font-mono font-medium"
           >
-            MK-RX-2026-1024-EV (Rahul Verma)
+            MK-RX-2026-1024-EV
           </button>
         </div>
       </div>

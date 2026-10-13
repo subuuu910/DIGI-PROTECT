@@ -44,6 +44,7 @@ interface PatientPortalPageProps {
   onRegisterPatient: (data: Partial<Patient>) => Promise<void>;
   onNavigateToVerify: (prescriptionId: string) => void;
   loading: boolean;
+  initialStep?: 'interview' | 'upload' | 'timeline' | 'brief' | 'prescription';
 }
 
 export const PatientPortalPage: React.FC<PatientPortalPageProps> = ({
@@ -61,10 +62,17 @@ export const PatientPortalPage: React.FC<PatientPortalPageProps> = ({
   onRegisterPatient,
   onNavigateToVerify,
   loading,
+  initialStep = 'interview',
 }) => {
   const [activeStep, setActiveStep] = useState<
     'interview' | 'upload' | 'timeline' | 'brief' | 'prescription'
-  >('interview');
+  >(initialStep);
+
+  React.useEffect(() => {
+    if (initialStep) {
+      setActiveStep(initialStep);
+    }
+  }, [initialStep]);
 
   const [selectedDocPreview, setSelectedDocPreview] = useState<MedicalDocument | null>(null);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);

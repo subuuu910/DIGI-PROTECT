@@ -185,10 +185,10 @@ C-Reactive Protein (CRP): 34 mg/L [HIGH, Ref: < 5 mg/L]`,
             Supported formats: PDF, JPG, PNG (Max 15 MB)
           </p>
 
-          {/* Quick Demo Pre-load buttons */}
+          {/* Sample Clinical Documents */}
           <div className="mt-5 pt-4 border-t border-slate-200/80 flex flex-wrap items-center justify-center gap-2">
             <span className="text-[11px] font-medium text-slate-500">
-              Demo sample documents:
+              Sample clinical documents:
             </span>
             <button
               type="button"

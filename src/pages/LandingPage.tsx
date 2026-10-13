@@ -19,14 +19,12 @@ import { SafetyBanner } from '../components/common/SafetyBanner';
 interface LandingPageProps {
   onStartPatient: () => void;
   onOpenDoctor: () => void;
-  onLaunchDemo: () => void;
   onOpenVerify: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onStartPatient,
   onOpenDoctor,
-  onLaunchDemo,
   onOpenVerify,
 }) => {
   return (
@@ -75,15 +73,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 >
                   <Stethoscope className="w-4 h-4 text-cyan-700" />
                   <span>Doctor Portal</span>
-                </button>
-
-                <button
-                  onClick={onLaunchDemo}
-                  className="px-5 py-3 bg-cyan-50 hover:bg-cyan-100 border border-cyan-300 text-cyan-900 rounded-lg text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2"
-                  title="Loads the complete Rahul Verma (MK1024) scenario with allergy contradiction & prescription"
-                >
-                  <PlayCircle className="w-4 h-4 text-cyan-700" />
-                  <span>Launch Full Demo (Rahul)</span>
                 </button>
               </div>
 

@@ -64,7 +64,7 @@ export const AboutPage: React.FC = () => {
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 space-y-2 text-xs text-slate-600">
         <h3 className="font-bold text-slate-900 text-sm">Prototype & Regulatory Context</h3>
         <p className="leading-relaxed">
-          MediKiosk is intended for supervised hospital outpatient triage, clinic kiosks, and telemedicine intake. Synthetic demo scenarios (including Rahul Verma, MK1024) are pre-loaded to demonstrate the full clinical workflow, contradiction detection, and doctor authorization cycle.
+          MediKiosk is intended for supervised hospital outpatient triage, clinical care facilities, and telemedicine intake. Clinical scenarios are pre-loaded to demonstrate the full clinical workflow, contradiction detection, and doctor authorization cycle.
         </p>
       </div>
     </div>

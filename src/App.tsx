@@ -8,6 +8,7 @@ import {
   AuditLogEntry,
   User,
   UserRole,
+  AppView,
 } from './types';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
@@ -17,20 +18,29 @@ import { PatientPortalPage } from './pages/PatientPortalPage';
 import { DoctorPortalPage } from './pages/DoctorPortalPage';
 import { VerificationPage } from './pages/VerificationPage';
 import { AboutPage } from './pages/AboutPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { DoctorPendingApprovalNotice } from './components/doctor/DoctorPendingApprovalNotice';
+import { AuthPage } from './components/auth/AuthPage';
 
-const getInitialView = (): 'landing' | 'patient' | 'doctor' | 'verify' | 'about' => {
+const getInitialView = (): AppView => {
   if (typeof window === 'undefined') return 'landing';
   const params = new URLSearchParams(window.location.search);
   const viewParam = params.get('view') as any;
-  if (viewParam && ['landing', 'patient', 'doctor', 'verify', 'about'].includes(viewParam)) {
-    return viewParam;
+  if (
+    viewParam &&
+    [
+      'landing',
+      'doctor-workspace',
+      'doctor-queue',
+      'verify',
+      'about',
+      'ai-analysis',
+      'profile',
+    ].includes(viewParam)
+  ) {
+    return viewParam === 'doctor' ? 'doctor-workspace' : viewParam;
   }
-  const isDemo = params.get('demo') === 'true' || localStorage.getItem('medikiosk_demo_active') === 'true';
-  const saved = localStorage.getItem('medikiosk_current_view') as any;
-  if (saved && ['landing', 'patient', 'doctor', 'verify', 'about'].includes(saved)) {
-    return saved;
-  }
-  return isDemo ? 'patient' : 'landing';
+  return 'landing';
 };
 
 const getInitialRole = (): UserRole => {
@@ -53,17 +63,12 @@ const getInitialPatientId = (): string => {
   return 'pat-1024';
 };
 
-const getInitialIsDemo = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  const params = new URLSearchParams(window.location.search);
-  return params.get('demo') === 'true' || localStorage.getItem('medikiosk_demo_active') === 'true';
-};
-
 export default function App() {
-  const [currentView, setCurrentView] = useState<'landing' | 'patient' | 'doctor' | 'verify' | 'about'>(getInitialView);
+  const [currentView, setCurrentView] = useState<AppView>(getInitialView);
   const [activeRole, setActiveRole] = useState<UserRole>(getInitialRole);
-  const [isDemoActive, setIsDemoActive] = useState<boolean>(getInitialIsDemo);
+  const [isDoctorApproved, setIsDoctorApproved] = useState<boolean>(false);
   const [userProfile, setUserProfile] = useState<User | null>(null);
+  const [initialChecking, setInitialChecking] = useState<boolean>(true);
 
   // Core Data State
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -99,31 +104,83 @@ export default function App() {
   };
 
   const syncUrlAndStorage = (
-    view: 'landing' | 'patient' | 'doctor' | 'verify' | 'about',
+    view: AppView,
     role: UserRole,
-    patientId: string,
-    demoActive: boolean
+    patientId: string
   ) => {
     try {
       localStorage.setItem('medikiosk_current_view', view);
       localStorage.setItem('medikiosk_active_role', role);
       localStorage.setItem('medikiosk_patient_id', patientId);
-      localStorage.setItem('medikiosk_demo_active', demoActive ? 'true' : 'false');
+      localStorage.removeItem('medikiosk_demo_active');
 
       const url = new URL(window.location.href);
       url.searchParams.set('view', view);
       url.searchParams.set('role', role);
       url.searchParams.set('patient', patientId);
-      if (demoActive) {
-        url.searchParams.set('demo', 'true');
-      } else {
-        url.searchParams.delete('demo');
-      }
+      url.searchParams.delete('demo');
       window.history.replaceState({}, '', url.toString());
     } catch (e) {
       // ignore
     }
   };
+
+  // Role-Based Navigation Security Validator
+  const checkRoleAccess = useCallback(
+    (
+      targetView: AppView,
+      role: UserRole,
+      approved: boolean
+    ): { allowed: boolean; safeView: AppView; reason?: string } => {
+      const normView: AppView = targetView === 'doctor' ? 'doctor-workspace' : targetView;
+
+      if (role === 'PATIENT') {
+        // Patient permitted tabs: landing, patient, verify, about, ai-analysis, profile
+        if (['doctor', 'doctor-workspace', 'doctor-queue'].includes(normView)) {
+          return {
+            allowed: false,
+            safeView: 'landing',
+            reason: 'Access denied: Doctor Workspace and Patient Queue are restricted to licensed doctors.',
+          };
+        }
+        return { allowed: true, safeView: normView };
+      }
+
+      if (role === 'DOCTOR') {
+        if (!approved) {
+          // Unverified Doctor: Doctor Workspace and Patient Queue are strictly restricted!
+          if (['doctor', 'doctor-workspace', 'doctor-queue'].includes(normView)) {
+            return {
+              allowed: false,
+              safeView: 'doctor-workspace', // Will render DoctorPendingApprovalNotice
+              reason: 'Doctor verification is pending administrative and medical council approval.',
+            };
+          }
+          if (['patient', 'verify', 'ai-analysis'].includes(normView)) {
+            return {
+              allowed: false,
+              safeView: 'landing',
+              reason: 'Access denied: Patient features are restricted for Doctor accounts.',
+            };
+          }
+          return { allowed: true, safeView: normView };
+        }
+
+        // Verified Doctor: Permitted tabs are landing, doctor-workspace, doctor-queue, about, profile
+        if (['patient', 'verify', 'ai-analysis'].includes(normView)) {
+          return {
+            allowed: false,
+            safeView: 'doctor-workspace',
+            reason: 'Access denied: Patient intake views are reserved for patient terminals.',
+          };
+        }
+        return { allowed: true, safeView: normView };
+      }
+
+      return { allowed: true, safeView: normView };
+    },
+    []
+  );
 
   const loadPatientContext = async (patientId: string) => {
     try {
@@ -134,7 +191,6 @@ export default function App() {
         api.getPrescription(patientId),
       ]);
 
-      // Check if there are locally persisted recent queries for this patient
       let sessionToUse = intSession;
       try {
         const localSaved = localStorage.getItem(`medikiosk_interview_${patientId}`);
@@ -157,54 +213,84 @@ export default function App() {
     }
   };
 
-  // Initial Load (and on page refresh)
+  // Initial Load (and on page refresh): Authentication is the FIRST screen
   const loadInitialData = useCallback(async () => {
     try {
-      setLoading(true);
-      const isDemo = getInitialIsDemo();
+      setInitialChecking(true);
+      const authData = await api.getCurrentUser().catch(() => ({ user: null }));
 
-      // IMPORTANT: Do NOT automatically reset demo on page refresh!
-      // This preserves the user's new queries, interview messages, and edits when refreshing the website.
+      if (!authData || !authData.user) {
+        setUserProfile(null);
+        setInitialChecking(false);
+        return;
+      }
 
-      const [authData, patientsList, logs] = await Promise.all([
-        api.getCurrentUser(),
-        api.getPatients(),
-        api.getAuditLogs(),
-      ]);
+      const authenticatedUser = authData.user;
+      const role = authenticatedUser.role || 'PATIENT';
+      const approved = !!authenticatedUser.isDoctorApproved;
 
-      setUserProfile(authData.doctorProfile);
+      setActiveRole(role);
+      setIsDoctorApproved(approved);
+      setUserProfile(authenticatedUser);
+
+      const patientsList = await api.getPatients().catch(() => []);
       setPatients(patientsList);
-      setAuditLogs(logs);
 
-      const initialPid = getInitialPatientId();
-      const targetPid = isDemo
-        ? 'pat-1024'
-        : (patientsList.find((p) => p.id === initialPid)?.id || patientsList[0]?.id || 'pat-1024');
+      if (role === 'DOCTOR' && approved) {
+        try {
+          const logs = await api.getAuditLogs();
+          setAuditLogs(logs);
+        } catch (e) {
+          // ignore
+        }
+      }
 
-      setSelectedPatientId(targetPid);
-      await loadPatientContext(targetPid);
+      const initialPid = patientsList[0]?.id || 'pat-1024';
+      setSelectedPatientId(initialPid);
+      await loadPatientContext(initialPid);
+
+      const initialView = getInitialView();
+      const accessCheck = checkRoleAccess(initialView, role, approved);
+      if (!accessCheck.allowed) {
+        setCurrentView(accessCheck.safeView);
+        syncUrlAndStorage(accessCheck.safeView, role, initialPid);
+      } else {
+        setCurrentView(initialView);
+      }
     } catch (err: any) {
       console.error('Failed to load initial data:', err);
-      addToast('error', 'Network Notice', 'Operating with cached clinical data.');
+      setUserProfile(null);
     } finally {
-      setLoading(false);
+      setInitialChecking(false);
     }
-  }, [addToast]);
+  }, [checkRoleAccess]);
 
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
 
-  // Handle View Navigation
-  const handleNavigate = (view: 'landing' | 'patient' | 'doctor' | 'verify' | 'about') => {
-    setCurrentView(view);
-    syncUrlAndStorage(view, activeRole, selectedPatientId, isDemoActive);
+  // Handle View Navigation with strict Role Guards
+  const handleNavigate = (view: AppView) => {
+    const normView: AppView = view === 'doctor' ? 'doctor-workspace' : view;
+    const accessCheck = checkRoleAccess(normView, activeRole, isDoctorApproved);
+
+    if (!accessCheck.allowed) {
+      if (accessCheck.reason && (!isDoctorApproved || activeRole === 'PATIENT')) {
+        addToast('error', 'Restricted Area', accessCheck.reason);
+      }
+      setCurrentView(accessCheck.safeView);
+      syncUrlAndStorage(accessCheck.safeView, activeRole, selectedPatientId);
+      return;
+    }
+
+    setCurrentView(normView);
+    syncUrlAndStorage(normView, activeRole, selectedPatientId);
   };
 
   // Handle Patient selection change
   const handleSelectPatient = async (patientId: string) => {
     setSelectedPatientId(patientId);
-    syncUrlAndStorage(currentView, activeRole, patientId, isDemoActive);
+    syncUrlAndStorage(currentView, activeRole, patientId);
     setLoading(true);
     await loadPatientContext(patientId);
     setLoading(false);
@@ -214,83 +300,99 @@ export default function App() {
     }
   };
 
-  // Switch Active Role
-  const handleRoleSwitch = async (role: UserRole) => {
+  // Handle successful login or OTP activation from AuthPage
+  const handleAuthSuccess = async (user: User) => {
+    setUserProfile(user);
+    const role = user.role;
+    const approved = !!user.isDoctorApproved;
     setActiveRole(role);
-    syncUrlAndStorage(role === 'DOCTOR' ? 'doctor' : 'patient', role, selectedPatientId, isDemoActive);
-    try {
-      await api.switchRole(role as any);
-      if (role === 'DOCTOR') {
-        setCurrentView('doctor');
-        addToast('info', 'Doctor Workspace Activated', 'Consulting as Dr. Eleanor Vance, MD (GMC-734567)');
-      } else {
-        setCurrentView('patient');
-        addToast('info', 'Patient Kiosk Activated', 'Operating pre-consultation intake terminal.');
-      }
-    } catch (err) {
-      console.warn('Role switch error:', err);
-    }
-  };
+    setIsDoctorApproved(approved);
 
-  // View / Switch to Demo Scenario without wiping user's queries
-  const handleLaunchDemo = async () => {
     try {
-      setIsDemoActive(true);
-      setSelectedPatientId('pat-1024');
-      setCurrentView('patient');
-      setActiveRole('PATIENT');
-      syncUrlAndStorage('patient', 'PATIENT', 'pat-1024', true);
-
       setLoading(true);
-      await loadPatientContext('pat-1024');
-      addToast(
-        'info',
-        'Demo Scenario Active: Rahul Verma (42, MK1024)',
-        'Your questions and progress are preserved when you refresh the page.'
-      );
+      const patientsList = await api.getPatients().catch(() => []);
+      setPatients(patientsList);
+
+      const pid = role === 'PATIENT' && user.id ? user.id : (patientsList[0]?.id || 'pat-1024');
+      setSelectedPatientId(pid);
+      await loadPatientContext(pid);
+
+      if (role === 'DOCTOR' && approved) {
+        try {
+          const logs = await api.getAuditLogs();
+          setAuditLogs(logs);
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      let nextView: AppView = 'landing';
+      if (role === 'DOCTOR') {
+        nextView = approved ? 'doctor-workspace' : 'doctor-workspace';
+      } else {
+        nextView = 'landing';
+      }
+
+      setCurrentView(nextView);
+      syncUrlAndStorage(nextView, role, pid);
+      addToast('success', `Welcome, ${user.name}`, `Signed in successfully.`);
     } catch (err: any) {
-      console.error('Failed to launch demo:', err);
-      addToast('error', 'Demo Error', err.message);
+      console.warn('Post-auth initialization error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Explicitly Reset Demo to clean default stage (only when user clicks "Reset to Default")
-  const handleResetDemoToDefault = async () => {
+  // Administrator Approval simulation for Doctor accounts
+  const handleApproveDoctor = async () => {
+    if (!userProfile) return;
     try {
       setLoading(true);
-      await api.resetDemo();
+      const res = await api.approveDoctor(userProfile.id);
+      if (res.success && res.user) {
+        setUserProfile(res.user);
+        setIsDoctorApproved(true);
+        setCurrentView('doctor-workspace');
+        syncUrlAndStorage('doctor-workspace', 'DOCTOR', selectedPatientId);
+        try {
+          const logs = await api.getAuditLogs();
+          setAuditLogs(logs);
+        } catch (e) {
+          // ignore
+        }
+        addToast('success', 'Doctor Account Approved', 'Administrative board verification complete. Doctor Workspace unlocked.');
+      }
+    } catch (err: any) {
+      addToast('error', 'Approval Error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Logout authenticated user: MUST destroy session and return to Login screen immediately
+  const handleLogout = async () => {
+    try {
+      setLoading(true);
+      await api.logout().catch(() => {});
+    } catch {
+      // ignore
+    } finally {
+      setUserProfile(null);
+      setActiveRole('PATIENT');
+      setIsDoctorApproved(false);
       try {
-        localStorage.removeItem('medikiosk_interview_pat-1024');
+        localStorage.removeItem('medikiosk_active_role');
+        localStorage.removeItem('medikiosk_current_view');
+        localStorage.removeItem('medikiosk_patient_id');
+        localStorage.removeItem('medikiosk_demo_active');
+        const url = new URL(window.location.href);
+        url.search = '';
+        window.history.replaceState({}, '', url.toString());
       } catch (e) {
         // ignore
       }
-      setIsDemoActive(true);
-      setSelectedPatientId('pat-1024');
-      setCurrentView('patient');
-      setActiveRole('PATIENT');
-      syncUrlAndStorage('patient', 'PATIENT', 'pat-1024', true);
-
-      // Reload patients and patient context
-      const [patientsList, logs] = await Promise.all([
-        api.getPatients(),
-        api.getAuditLogs(),
-      ]);
-      setPatients(patientsList);
-      setAuditLogs(logs);
-      await loadPatientContext('pat-1024');
-
-      addToast(
-        'success',
-        'Demo Scenario Reset to Default',
-        'Original baseline triage scenario restored for Rahul Verma (MK1024).'
-      );
-    } catch (err: any) {
-      console.error('Failed to reset demo:', err);
-      addToast('error', 'Reset Error', err.message);
-    } finally {
       setLoading(false);
+      addToast('info', 'Logged Out', 'Your session has ended. Please log in.');
     }
   };
 
@@ -302,7 +404,6 @@ export default function App() {
       const res = await api.sendInterviewMessage(selectedPatientId, text, isVoice);
       setInterview(res.session);
 
-      // Persist latest session in localStorage so refreshing the website always preserves new queries
       try {
         localStorage.setItem(`medikiosk_interview_${selectedPatientId}`, JSON.stringify(res.session));
       } catch (e) {
@@ -310,12 +411,8 @@ export default function App() {
       }
 
       // Refresh clinical data
-      const [clin, logs] = await Promise.all([
-        api.getClinicalData(selectedPatientId),
-        api.getAuditLogs(),
-      ]);
+      const clin = await api.getClinicalData(selectedPatientId);
       setClinicalData(clin);
-      setAuditLogs(logs);
 
       if (res.usedGemini) {
         addToast('success', 'Gemini AI Clinical Evaluation', 'Synthesized next adaptive follow-up inquiry.');
@@ -333,14 +430,12 @@ export default function App() {
     try {
       setLoading(true);
       await api.uploadDocument(selectedPatientId, data);
-      const [docs, clin, logs] = await Promise.all([
+      const [docs, clin] = await Promise.all([
         api.getDocuments(selectedPatientId),
         api.getClinicalData(selectedPatientId),
-        api.getAuditLogs(),
       ]);
       setDocuments(docs);
       setClinicalData(clin);
-      setAuditLogs(logs);
       addToast('success', 'Document Ingested & OCR Processed', `Extracted clinical entities from ${data.fileName}`);
     } catch (err: any) {
       addToast('error', 'Upload Error', err.message || 'Failed to upload document');
@@ -354,15 +449,10 @@ export default function App() {
     try {
       setLoading(true);
       const newPat = await api.registerPatient(data);
-      const [patientsList, logs] = await Promise.all([
-        api.getPatients(),
-        api.getAuditLogs(),
-      ]);
+      const patientsList = await api.getPatients();
       setPatients(patientsList);
-      setAuditLogs(logs);
       setSelectedPatientId(newPat.id);
-      setIsDemoActive(false);
-      syncUrlAndStorage(currentView, activeRole, newPat.id, false);
+      syncUrlAndStorage(currentView, activeRole, newPat.id);
       await loadPatientContext(newPat.id);
       addToast('success', 'Registration Complete', `Welcome ${newPat.fullName}! Informed consent recorded.`);
     } catch (err: any) {
@@ -372,75 +462,75 @@ export default function App() {
     }
   };
 
-  // Doctor Fact Verification
+  // Doctor Fact Verification (Verified Doctor Only)
   const handleVerifyFact = async (factId: string, verified: boolean, doctorNotes?: string) => {
     if (!selectedPatientId) return;
     try {
       await api.verifyFact(selectedPatientId, factId, verified, doctorNotes);
-      const [clin, logs] = await Promise.all([
-        api.getClinicalData(selectedPatientId),
-        api.getAuditLogs(),
-      ]);
+      const clin = await api.getClinicalData(selectedPatientId);
       setClinicalData(clin);
-      setAuditLogs(logs);
+      if (activeRole === 'DOCTOR' && isDoctorApproved) {
+        const logs = await api.getAuditLogs().catch(() => []);
+        setAuditLogs(logs);
+      }
       addToast('info', 'Doctor Verification Updated', `Clinical fact marked as verified=${verified}`);
     } catch (err: any) {
       addToast('error', 'Verification Failed', err.message);
     }
   };
 
-  // Doctor Resolve Contradiction
+  // Doctor Resolve Contradiction (Verified Doctor Only)
   const handleResolveContradiction = async (contraId: string, resolution: string) => {
     if (!selectedPatientId) return;
     try {
       await api.resolveContradiction(selectedPatientId, contraId, resolution);
-      const [clin, logs] = await Promise.all([
-        api.getClinicalData(selectedPatientId),
-        api.getAuditLogs(),
-      ]);
+      const clin = await api.getClinicalData(selectedPatientId);
       setClinicalData(clin);
-      setAuditLogs(logs);
+      if (activeRole === 'DOCTOR' && isDoctorApproved) {
+        const logs = await api.getAuditLogs().catch(() => []);
+        setAuditLogs(logs);
+      }
       addToast('success', 'Contradiction Resolved', 'Physician resolution recorded. Allergy conflict cleared.');
     } catch (err: any) {
       addToast('error', 'Resolution Failed', err.message);
     }
   };
 
-  // Doctor Acknowledge Red Flag
+  // Doctor Acknowledge Red Flag (Verified Doctor Only)
   const handleAcknowledgeRedFlag = async (flagId: string) => {
     if (!selectedPatientId) return;
     try {
       await api.acknowledgeRedFlag(selectedPatientId, flagId);
-      const [clin, logs] = await Promise.all([
-        api.getClinicalData(selectedPatientId),
-        api.getAuditLogs(),
-      ]);
+      const clin = await api.getClinicalData(selectedPatientId);
       setClinicalData(clin);
-      setAuditLogs(logs);
+      if (activeRole === 'DOCTOR' && isDoctorApproved) {
+        const logs = await api.getAuditLogs().catch(() => []);
+        setAuditLogs(logs);
+      }
       addToast('info', 'Red Flag Acknowledged', 'Attending doctor noted safety alert.');
     } catch (err: any) {
       addToast('error', 'Action Failed', err.message);
     }
   };
 
-  // Doctor Confirm Brief
+  // Doctor Confirm Brief (Verified Doctor Only)
   const handleConfirmBrief = async (clinicalImpressionDraft: string, doctorNotes?: string) => {
     if (!selectedPatientId) return;
     try {
       await api.confirmDoctorBrief(selectedPatientId, clinicalImpressionDraft, doctorNotes);
-      const [clin, logs] = await Promise.all([
-        api.getClinicalData(selectedPatientId),
-        api.getAuditLogs(),
-      ]);
+      const clin = await api.getClinicalData(selectedPatientId);
       setClinicalData(clin);
-      setAuditLogs(logs);
+      if (activeRole === 'DOCTOR' && isDoctorApproved) {
+        const logs = await api.getAuditLogs().catch(() => []);
+        setAuditLogs(logs);
+      }
       addToast('success', '60-Second Brief Confirmed', 'Physician verified intake findings.');
     } catch (err: any) {
       addToast('error', 'Confirmation Failed', err.message);
     }
   };
 
-  // Update Prescription Draft
+  // Update Prescription Draft (Verified Doctor Only)
   const handleUpdatePrescriptionDraft = async (data: Partial<EPrescription>) => {
     if (!selectedPatientId) return;
     try {
@@ -451,21 +541,23 @@ export default function App() {
     }
   };
 
-  // Authorize Prescription
+  // Authorize Prescription (Verified Doctor Only)
   const handleAuthorizePrescription = async (doctorNotes?: string) => {
     if (!selectedPatientId) return;
     try {
       setLoading(true);
       const res = await api.authorizePrescription(selectedPatientId, doctorNotes);
       setPrescription(res.prescription);
-      const [patientsList, clin, logs] = await Promise.all([
+      const [patientsList, clin] = await Promise.all([
         api.getPatients(),
         api.getClinicalData(selectedPatientId),
-        api.getAuditLogs(),
       ]);
       setPatients(patientsList);
       setClinicalData(clin);
-      setAuditLogs(logs);
+      if (activeRole === 'DOCTOR' && isDoctorApproved) {
+        const logs = await api.getAuditLogs().catch(() => []);
+        setAuditLogs(logs);
+      }
       addToast(
         'success',
         'Prescription Authorized & Digitally Signed!',
@@ -487,6 +579,28 @@ export default function App() {
   const currentPatient =
     patients.find((p) => p.id === selectedPatientId) || patients[0];
 
+  // 1. Initial Session Check Screen
+  if (initialChecking) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white space-y-4">
+        <div className="w-12 h-12 rounded-xl bg-cyan-600 flex items-center justify-center font-bold text-xl shadow-lg animate-pulse">
+          MK
+        </div>
+        <p className="text-sm font-medium text-slate-300">Checking clinical session...</p>
+      </div>
+    );
+  }
+
+  // 2. Authentication MUST be the FIRST screen when unauthenticated
+  if (!userProfile) {
+    return (
+      <>
+        <AuthPage onAuthSuccess={handleAuthSuccess} />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-cyan-500/20 selection:text-cyan-900">
       {/* Top Bar Navigation */}
@@ -494,29 +608,37 @@ export default function App() {
         currentView={currentView}
         onNavigate={handleNavigate}
         activeRole={activeRole}
-        onRoleSwitch={handleRoleSwitch}
-        onLaunchDemo={handleLaunchDemo}
-        onResetDemoToDefault={handleResetDemoToDefault}
-        isDemoActive={isDemoActive}
+        isDoctorApproved={isDoctorApproved}
+        currentUser={userProfile}
+        onLogout={handleLogout}
       />
 
       {/* Main View Port */}
       <main className="flex-1">
+        {/* 1. OVERVIEW (Landing Page) */}
         {currentView === 'landing' && (
           <LandingPage
             onStartPatient={() => {
-              setActiveRole('PATIENT');
-              handleNavigate('patient');
+              if (activeRole === 'PATIENT') {
+                handleNavigate('patient');
+              } else {
+                addToast('info', 'Patient Kiosk', 'Patient intake is reserved for patient users.');
+              }
             }}
             onOpenDoctor={() => {
-              setActiveRole('DOCTOR');
-              handleNavigate('doctor');
+              if (activeRole === 'DOCTOR') {
+                handleNavigate('doctor-workspace');
+              } else {
+                addToast('info', 'Doctor Access', 'Doctor Workspace is restricted to licensed doctors. Log in with a Doctor account.');
+              }
             }}
-            onLaunchDemo={handleLaunchDemo}
-            onOpenVerify={() => handleNavigate('verify')}
+            onOpenVerify={() => {
+              handleNavigate('verify');
+            }}
           />
         )}
 
+        {/* 2. PATIENT KIOSK (Patient Portal with Intake Stepper) */}
         {currentView === 'patient' && currentPatient && interview && prescription && (
           <PatientPortalPage
             currentPatient={currentPatient}
@@ -533,39 +655,85 @@ export default function App() {
             onRegisterPatient={handleRegisterPatient}
             onNavigateToVerify={handleNavigateToVerify}
             loading={loading}
+            initialStep="interview"
           />
         )}
 
-        {currentView === 'doctor' && currentPatient && prescription && userProfile && (
-          <DoctorPortalPage
-            doctor={userProfile}
-            patients={patients}
-            selectedPatient={currentPatient}
+        {/* 3. AI ANALYSIS (Patient Portal with 60s Brief Preview active) */}
+        {currentView === 'ai-analysis' && currentPatient && interview && prescription && (
+          <PatientPortalPage
+            currentPatient={currentPatient}
+            allPatients={patients}
             onSelectPatient={handleSelectPatient}
-            brief={clinicalData?.brief || null}
-            facts={clinicalData?.facts || []}
-            redFlags={clinicalData?.redFlags || []}
-            missingInfo={clinicalData?.missingInfo || []}
-            contradictions={clinicalData?.contradictions || []}
+            interview={interview}
             documents={documents}
             timeline={clinicalData?.timeline || []}
+            brief={clinicalData?.brief || null}
             prescription={prescription}
-            auditLogs={auditLogs}
-            onVerifyFact={handleVerifyFact}
-            onResolveContradiction={handleResolveContradiction}
-            onAcknowledgeRedFlag={handleAcknowledgeRedFlag}
-            onConfirmBrief={handleConfirmBrief}
-            onUpdatePrescriptionDraft={handleUpdatePrescriptionDraft}
-            onAuthorizePrescription={handleAuthorizePrescription}
+            redFlags={clinicalData?.redFlags || []}
+            onSendInterviewMessage={handleSendInterviewMessage}
+            onUploadDocument={handleUploadDocument}
+            onRegisterPatient={handleRegisterPatient}
+            onNavigateToVerify={handleNavigateToVerify}
             loading={loading}
+            initialStep="brief"
           />
         )}
 
+        {/* 4. DOCTOR WORKSPACE & PATIENT QUEUE (Doctor Portal or Pending Notice) */}
+        {(currentView === 'doctor-workspace' || currentView === 'doctor-queue' || currentView === 'doctor') && (
+          activeRole === 'DOCTOR' && !isDoctorApproved ? (
+            <DoctorPendingApprovalNotice
+              doctor={userProfile}
+              onLogout={handleLogout}
+              onApproveDoctor={handleApproveDoctor}
+              onNavigateToOverview={() => handleNavigate('landing')}
+            />
+          ) : currentPatient && prescription && userProfile ? (
+            <DoctorPortalPage
+              doctor={userProfile}
+              patients={patients}
+              selectedPatient={currentPatient}
+              onSelectPatient={handleSelectPatient}
+              brief={clinicalData?.brief || null}
+              facts={clinicalData?.facts || []}
+              redFlags={clinicalData?.redFlags || []}
+              missingInfo={clinicalData?.missingInfo || []}
+              contradictions={clinicalData?.contradictions || []}
+              documents={documents}
+              timeline={clinicalData?.timeline || []}
+              prescription={prescription}
+              auditLogs={auditLogs}
+              onVerifyFact={handleVerifyFact}
+              onResolveContradiction={handleResolveContradiction}
+              onAcknowledgeRedFlag={handleAcknowledgeRedFlag}
+              onConfirmBrief={handleConfirmBrief}
+              onUpdatePrescriptionDraft={handleUpdatePrescriptionDraft}
+              onAuthorizePrescription={handleAuthorizePrescription}
+              loading={loading}
+              activeViewMode={currentView === 'doctor-queue' ? 'queue' : 'workspace'}
+              onViewModeChange={(mode) => handleNavigate(mode === 'queue' ? 'doctor-queue' : 'doctor-workspace')}
+            />
+          ) : null
+        )}
+
+        {/* 5. VERIFY PRESCRIPTION */}
         {currentView === 'verify' && (
           <VerificationPage initialId={verifyTargetId} />
         )}
 
+        {/* 6. SAFETY AND SYSTEM */}
         {currentView === 'about' && <AboutPage />}
+
+        {/* 7. MY PROFILE */}
+        {currentView === 'profile' && (
+          <ProfilePage
+            user={userProfile}
+            patient={currentPatient}
+            activeRole={activeRole}
+            onLogout={handleLogout}
+          />
+        )}
       </main>
 
       {/* Footer */}
@@ -576,3 +744,4 @@ export default function App() {
     </div>
   );
 }
+

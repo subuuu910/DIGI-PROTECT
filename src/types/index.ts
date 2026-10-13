@@ -1,5 +1,16 @@
 export type UserRole = 'PATIENT' | 'DOCTOR' | 'ADMIN';
 
+export type AppView =
+  | 'landing'
+  | 'patient'
+  | 'doctor'
+  | 'doctor-workspace'
+  | 'doctor-queue'
+  | 'verify'
+  | 'about'
+  | 'ai-analysis'
+  | 'profile';
+
 export interface User {
   id: string;
   name: string;
@@ -9,6 +20,34 @@ export interface User {
   doctorLicense?: string;
   doctorSpecialty?: string;
   hospitalAffiliation?: string;
+  isDoctorApproved?: boolean;
+  approvalStatus?: 'APPROVED' | 'PENDING' | 'REJECTED';
+  phone?: string;
+}
+
+export interface SignUpPatientData {
+  fullName: string;
+  email: string;
+  phone: string;
+  age: number;
+  gender: 'Male' | 'Female' | 'Other';
+  password: string;
+  confirmPassword?: string;
+}
+
+export interface SignUpDoctorData {
+  fullName: string;
+  email: string;
+  phone: string;
+  doctorLicense: string;
+  doctorSpecialty: string;
+  password: string;
+  confirmPassword?: string;
+}
+
+export interface OtpVerificationPayload {
+  ticketId: string;
+  otp: string;
 }
 
 export type TriagePriority = 'GREEN' | 'AMBER' | 'RED';
